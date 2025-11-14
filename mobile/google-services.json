@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "210005613939",
+    "project_id": "arenax-fa364",
+    "storage_bucket": "arenax-fa364.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:210005613939:android:abf71b0e42a57f2c4c3906",
+        "android_client_info": {
+          "package_name": "com.anonymous.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDd_ZWh6dilTWMdTsNxJZVsb5WbJQuSDSA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
