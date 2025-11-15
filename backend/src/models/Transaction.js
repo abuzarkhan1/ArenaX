@@ -87,7 +87,7 @@ const transactionSchema = new mongoose.Schema({
 transactionSchema.index({ userId: 1, createdAt: -1 });
 transactionSchema.index({ category: 1 });
 transactionSchema.index({ status: 1 });
-transactionSchema.index({ relatedRequest: 1 }); // ✅ NEW: Index for linking
+transactionSchema.index({ relatedRequest: 1 }); 
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
 

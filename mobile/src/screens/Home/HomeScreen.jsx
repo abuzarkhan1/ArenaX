@@ -13,10 +13,23 @@ import {
   Linking,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { tournamentAPI } from '../../services/api';
+import { tournamentAPI, notificationAPI } from '../../services/api';
 import Svg, { Path } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
+
+// Bell Icon Component
+const BellIcon = ({ size = 24, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 // WhatsApp Icon Component
 const WhatsAppIcon = ({ size = 35, color = '#FFFFFF' }) => (
@@ -43,7 +56,7 @@ const FilterButton = React.memo(({ label, value, isActive, onPress }) => {
   );
 });
 
-// Normalize image URL function (outside component to prevent recreation)
+// Normalize image URL function
 const normalizeImageUrl = (url) => {
   if (!url) return null;
   const trimmedUrl = url.trim();
@@ -73,12 +86,10 @@ const TournamentCard = React.memo(({
     >
       <View style={styles.bannerContainer}>
         <View style={styles.fallbackBackground}>
-          {/* Decorative Pattern */}
           <View style={styles.patternOverlay}>
             <Text style={styles.patternIcon}>🏆</Text>
           </View>
 
-          {/* Image Loading */}
           {imageUri && !imageError && (
             <>
               <Image
@@ -104,7 +115,6 @@ const TournamentCard = React.memo(({
 
           <View style={styles.bannerOverlay} />
 
-          {/* Tournament Info */}
           <View style={styles.titleContainer}>
             <Text style={styles.tournamentTitle} numberOfLines={2}>
               {tournament.title}
@@ -115,7 +125,6 @@ const TournamentCard = React.memo(({
     </TouchableOpacity>
   );
 }, (prevProps, nextProps) => {
-  // Only re-render if these specific props change
   return (
     prevProps.tournament._id === nextProps.tournament._id &&
     prevProps.tournament.bannerImage === nextProps.tournament.bannerImage &&
@@ -133,6 +142,19 @@ const HomeScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('all');
   const [imageErrors, setImageErrors] = useState({});
   const [imageLoading, setImageLoading] = useState({});
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread notification count
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const response = await notificationAPI.getUnreadCount();
+      if (response.data.success) {
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  }, []);
 
   const fetchTournaments = useCallback(async () => {
     try {
@@ -152,19 +174,27 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchTournaments();
-  }, [fetchTournaments]);
+    fetchUnreadCount();
+  }, [fetchTournaments, fetchUnreadCount]);
+
+  // Poll for unread count every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchTournaments(), updateUser()]);
-  }, [fetchTournaments, updateUser]);
+    await Promise.all([fetchTournaments(), updateUser(), fetchUnreadCount()]);
+  }, [fetchTournaments, updateUser, fetchUnreadCount]);
 
-  // Memoized filter handlers
   const handleFilterChange = useCallback((value) => {
     setFilter(value);
   }, []);
 
-  // Memoized image handlers
   const handleImageError = useCallback((tournamentId) => {
     setImageErrors(prev => ({ ...prev, [tournamentId]: true }));
     setImageLoading(prev => ({ ...prev, [tournamentId]: false }));
@@ -178,14 +208,18 @@ const HomeScreen = ({ navigation }) => {
     setImageLoading(prev => ({ ...prev, [tournamentId]: false }));
   }, []);
 
-  // Memoized navigation handler
   const handleNavigateToTournament = useCallback((tournamentId) => {
     navigation.navigate('TournamentDetail', { tournamentId });
   }, [navigation]);
 
-  // WhatsApp handler
+  const handleNavigateToNotifications = useCallback(() => {
+    navigation.navigate('Notifications');
+    // Refresh unread count when returning
+    setTimeout(() => fetchUnreadCount(), 500);
+  }, [navigation, fetchUnreadCount]);
+
   const handleWhatsAppPress = useCallback(async () => {
-    const phoneNumber = '923367135319'; // Remove the '+' sign
+    const phoneNumber = '923367135319';
     const message = 'Hello, I need support!';
     const whatsappUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
     const webUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -195,11 +229,9 @@ const HomeScreen = ({ navigation }) => {
       if (supported) {
         await Linking.openURL(whatsappUrl);
       } else {
-        // Fallback to web version
         await Linking.openURL(webUrl);
       }
     } catch (error) {
-      // If app fails, try web version
       try {
         await Linking.openURL(webUrl);
       } catch (webError) {
@@ -208,7 +240,6 @@ const HomeScreen = ({ navigation }) => {
     }
   }, []);
 
-  // Memoized section title
   const sectionTitle = useMemo(() => {
     switch (filter) {
       case 'live':
@@ -243,9 +274,29 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.greeting}>Welcome back,</Text>
             <Text style={styles.username}>{user?.username}</Text>
           </View>
-          <View style={styles.coinBadge}>
-            <Text style={styles.coinIcon}>🪙</Text>
-            <Text style={styles.coinAmount}>{user?.coinBalance || 0}</Text>
+          
+          <View style={styles.headerRight}>
+            {/* Notification Bell */}
+            <TouchableOpacity 
+              style={styles.notificationButton}
+              onPress={handleNavigateToNotifications}
+              activeOpacity={0.7}
+            >
+              <BellIcon size={24} color="#FFFFFF" />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Coin Badge */}
+            <View style={styles.coinBadge}>
+              <Text style={styles.coinIcon}>🪙</Text>
+              <Text style={styles.coinAmount}>{user?.coinBalance || 0}</Text>
+            </View>
           </View>
         </View>
 
@@ -357,6 +408,39 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#1E1E1E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF3B30',
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: '#121212',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
   coinBadge: {
     flexDirection: 'row',

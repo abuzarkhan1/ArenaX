@@ -1,4 +1,4 @@
-// App.tsx - With Link Handling Support
+// App.tsx - With NotificationsScreen Added
 
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
@@ -11,6 +11,8 @@ import ResetPasswordScreen from './src/screens/Auth/ResetPassword';
 import HomeScreen from './src/screens/Home/HomeScreen';
 import TournamentDetailScreen from './src/screens/Tournaments/TournamentDetailScreen';
 import ProfileScreen from './src/screens/Profile/ProfileScreen';
+import EditProfileScreen from './src/screens/Profile/EditProfileScreen';
+import NotificationsScreen from './src/screens/Notifications/NotificationsScreen'; // ✅ ADD THIS
 import WalletScreen from './src/screens/Wallet/WalletScreen';
 import ChatScreen from './src/screens/Chat/ChatScreen';
 import { View, Text, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
@@ -26,8 +28,10 @@ const Tab = createBottomTabNavigator();
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl ||
                process.env.EXPO_PUBLIC_API_URL || 
-               'http://10.198.88.149:5000' || 
-               'https://terese-unconventional-luis.ngrok-free.dev';
+               'http://192.168.15.7:5000' ||
+               'https://overcritically-telaesthetic-hayley.ngrok-free.dev'
+               || 'http://10.0.2.2'
+               ;
 
 console.log('🌐 API URL:', API_URL);
 
@@ -156,7 +160,6 @@ const AppNavigator = () => {
   const notificationResponseListener = useRef();
   const [expoPushToken, setExpoPushToken] = useState('');
 
-  // ✅ NEW: Handle notification link navigation
   const handleNotificationLink = async (link, navigationRef, data) => {
     try {
       console.log('🔗 Handling notification link:', link);
@@ -166,11 +169,9 @@ const AppNavigator = () => {
         return;
       }
 
-      // Check if it's a deep link (app://)
       if (link.startsWith('app://')) {
         handleDeepLink(link, navigationRef, data);
       } 
-      // Check if it's a web URL
       else if (link.startsWith('http://') || link.startsWith('https://')) {
         const supported = await Linking.canOpenURL(link);
         
@@ -189,21 +190,17 @@ const AppNavigator = () => {
     }
   };
 
-  // ✅ NEW: Handle deep links within the app
   const handleDeepLink = (link, navigationRef, data) => {
     try {
-      // Remove app:// prefix
       const path = link.replace('app://', '');
       console.log('Deep link path:', path);
       
-      // Parse the path
       const parts = path.split('/');
       const screen = parts[0];
       const id = parts[1];
       
       console.log('Navigating to screen:', screen, 'with id:', id);
       
-      // Navigate based on the link
       switch (screen) {
         case 'tournament':
           if (id) {
@@ -402,9 +399,7 @@ const AppNavigator = () => {
     }
   }, [user]);
 
-  // ✅ UPDATED: Setup notification listeners with link handling
   useEffect(() => {
-    // Handle notification received while app is in foreground
     notificationReceivedListener.current = Notifications.addNotificationReceivedListener(
       (notification) => {
         console.log('📩 Notification received in foreground:', notification);
@@ -413,7 +408,6 @@ const AppNavigator = () => {
         const data = notification.request.content.data;
         const link = data?.link;
         
-        // Show alert with option to open link if available
         if (link) {
           Alert.alert(
             notification.request.content.title || 'New Notification',
@@ -435,26 +429,22 @@ const AppNavigator = () => {
       }
     );
 
-    // ✅ UPDATED: Handle notification tapped with link support
     notificationResponseListener.current = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         console.log('👆 Notification tapped:', response);
         const data = response.notification.request.content.data;
         console.log('Notification data:', data);
         
-        // Priority 1: Check for link in notification data
         if (data?.link) {
           console.log('Found link in notification:', data.link);
           handleNotificationLink(data.link, navigationRef, data);
         }
-        // Priority 2: Fallback to tournament navigation
         else if (data?.type === 'tournament' && data?.relatedTournament) {
           console.log('No link found, using fallback tournament navigation');
           navigationRef.current?.navigate('TournamentDetail', {
             tournamentId: data.relatedTournament,
           });
         }
-        // Priority 3: Default to home screen
         else {
           console.log('No link or tournament, navigating to home');
           navigationRef.current?.navigate('Main', { screen: 'Home' });
@@ -511,6 +501,9 @@ const AppNavigator = () => {
             <Stack.Screen name="Main" component={TabNavigator} />
             <Stack.Screen name="TournamentDetail" component={TournamentDetailScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            {/* ✅ ADD THIS LINE - Register Notifications Screen */}
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
           </>
         )}
       </Stack.Navigator>

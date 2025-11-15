@@ -1,9 +1,10 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-//  const API_BASE_URL = 'http://10.0.2.2:5000/api';
-  const API_BASE_URL = 'http://10.198.88.149:5000/api';
-//const API_BASE_URL = "https://terese-unconventional-luis.ngrok-free.dev/api";
+  // const API_BASE_URL = 'http://10.0.2.2:5000/api';
+  const API_BASE_URL = 'http://192.168.15.7:5000/api';
+// const API_BASE_URL = "https://overcritically-telaesthetic-hayley.ngrok-free.dev/api";
+// const API_BASE_URL = "https://terese-unconventional-luis.ngrok-free.dev/api";
 //  const API_BASE_URL = 'http://localhost:5000/api';
 
 const api = axios.create({
@@ -47,6 +48,24 @@ export const authAPI = {
   login: (email, password) => api.post("/auth/login", { email, password }),
   getProfile: () => api.get("/auth/profile"),
   registerPushToken: (pushToken) => api.post('/auth/push-token', { pushToken }),
+  
+  // NEW: Update profile with multipart/form-data support
+  updateProfile: async (formData) => {
+    const token = await AsyncStorage.getItem("userToken");
+    
+    console.log('📤 Updating profile...');
+    
+    return axios({
+      method: 'PUT',
+      url: `${API_BASE_URL}/auth/profile`,
+      data: formData,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+        'ngrok-skip-browser-warning': 'true',
+      },
+    });
+  },
 };
 
 export const tournamentAPI = {
@@ -69,7 +88,6 @@ export const withdrawalAPI = {
       amount: data.amount,
       paymentMethod: data.paymentMethod,
       accountNumber: data.accountNumber,
-      // Don't log password for security
       hasPassword: !!data.password
     });
     
@@ -77,14 +95,46 @@ export const withdrawalAPI = {
       amount: data.amount,
       paymentMethod: data.paymentMethod,
       accountNumber: data.accountNumber,
-      password: data.password  // ← ADDED: Include password in request
+      password: data.password
     });
   },
   getMyWithdrawals: (params) => api.get('/withdrawals/my-withdrawals', { params }),
 };
 
-// export const SOCKET_URL = "http://10.0.2.2:5000";
-  export const SOCKET_URL = 'http://10.198.88.149:5000';
+// NEW: Notification API
+export const notificationAPI = {
+  // Get user notifications
+  getUserNotifications: (params = {}) => {
+    return api.get('/notifications/user/notifications', { params });
+  },
+
+  // Get unread count
+  getUnreadCount: () => {
+    return api.get('/notifications/user/unread-count');
+  },
+
+  // Mark notification as read
+  markAsRead: (notificationId) => {
+    return api.patch(`/notifications/user/notifications/${notificationId}/read`);
+  },
+
+  // Mark all as read
+  markAllAsRead: () => {
+    return api.patch('/notifications/user/notifications/mark-all-read');
+  }
+};
+
+//  export const SOCKET_URL = "http://10.0.2.2:5000";
+  export const SOCKET_URL = 'http://192.168.15.7:5000';
 //export const SOCKET_URL = 'https://terese-unconventional-luis.ngrok-free.dev';
+// export const SOCKET_URL = "https://overcritically-telaesthetic-hayley.ngrok-free.dev";
+
+// NEW: Export base URL for image paths
+export const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  // Remove /api from base URL for image serving
+  const baseUrl = API_BASE_URL.replace('/api', '');
+  return `${baseUrl}${imagePath}`;
+};
 
 export default api;

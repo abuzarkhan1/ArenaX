@@ -6,14 +6,32 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
+  Image,
+  RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { getImageUrl } from '../../services/api';
 
 const ProfileScreen = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigation = useNavigation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Only refresh when user manually pulls to refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      if (updateUser) {
+        await updateUser();
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleLogout = () => {
     setShowLogoutModal(false);
@@ -21,42 +39,67 @@ const ProfileScreen = () => {
   };
 
   const handleEditProfile = () => {
-    // TODO: Navigate to edit profile screen
-    console.log('Edit Profile pressed');
+    // Navigate to EditProfileScreen in the same folder structure
+    navigation.navigate('EditProfile');
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00BFFF"
+            colors={['#00BFFF']}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>My Profile</Text>
-          <View style={styles.headerSpacer} />
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={handleEditProfile}
+          >
+            <Text style={styles.editButtonText}>✏️ Edit</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Profile Header Section */}
         <View style={styles.profileHeader}>
-          {/* Avatar */}
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.username?.charAt(0).toUpperCase() || 'U'}
-              </Text>
+          {/* Avatar - CLICKABLE to edit profile */}
+          <TouchableOpacity 
+            style={styles.avatarContainer}
+            onPress={handleEditProfile}
+            activeOpacity={0.7}
+          >
+            {user?.profileImage ? (
+              <Image
+                source={{ uri: getImageUrl(user.profileImage) }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
+                </Text>
+              </View>
+            )}
+            {/* Edit Icon Overlay */}
+            <View style={styles.editIconOverlay}>
+              <Text style={styles.editIconText}>✏️</Text>
             </View>
-            <TouchableOpacity style={styles.editAvatarButton}>
-              <Text style={styles.editIcon}>✏️</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
 
           {/* User Info */}
           <View style={styles.userInfo}>
@@ -69,10 +112,19 @@ const ProfileScreen = () => {
 
         {/* Info List */}
         <View style={styles.infoList}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Account Information</Text>
+            <TouchableOpacity onPress={handleEditProfile}>
+              <Text style={styles.editLinkText}>Edit Profile</Text>
+            </TouchableOpacity>
+          </View>
 
-          {/* Full Name */}
-          <View style={styles.infoCard}>
+          {/* Full Name - CLICKABLE */}
+          <TouchableOpacity 
+            style={styles.infoCard}
+            onPress={handleEditProfile}
+            activeOpacity={0.7}
+          >
             <View style={styles.infoLeft}>
               <View style={styles.iconCircle}>
                 <Text style={styles.iconText}>👤</Text>
@@ -82,9 +134,10 @@ const ProfileScreen = () => {
                 <Text style={styles.infoValue}>{user?.fullName || 'Not set'}</Text>
               </View>
             </View>
-          </View>
+            <Text style={styles.arrowIcon}>›</Text>
+          </TouchableOpacity>
 
-          {/* Email */}
+          {/* Email - Non-clickable */}
           <View style={styles.infoCard}>
             <View style={styles.infoLeft}>
               <View style={styles.iconCircle}>
@@ -99,8 +152,12 @@ const ProfileScreen = () => {
             </View>
           </View>
 
-          {/* Phone */}
-          <View style={styles.infoCard}>
+          {/* Phone - CLICKABLE */}
+          <TouchableOpacity 
+            style={styles.infoCard}
+            onPress={handleEditProfile}
+            activeOpacity={0.7}
+          >
             <View style={styles.infoLeft}>
               <View style={styles.iconCircle}>
                 <Text style={styles.iconText}>📱</Text>
@@ -112,10 +169,15 @@ const ProfileScreen = () => {
                 </Text>
               </View>
             </View>
-          </View>
+            <Text style={styles.arrowIcon}>›</Text>
+          </TouchableOpacity>
 
-          {/* Gaming ID */}
-          <View style={styles.infoCard}>
+          {/* Gaming ID - CLICKABLE */}
+          <TouchableOpacity 
+            style={styles.infoCard}
+            onPress={handleEditProfile}
+            activeOpacity={0.7}
+          >
             <View style={styles.infoLeft}>
               <View style={styles.iconCircle}>
                 <Text style={styles.iconText}>🎮</Text>
@@ -127,17 +189,19 @@ const ProfileScreen = () => {
                 </Text>
               </View>
             </View>
-          </View>
+            <Text style={styles.arrowIcon}>›</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity 
+          {/* Logout Button */}
+          <TouchableOpacity
             style={styles.logoutButton}
             onPress={() => setShowLogoutModal(true)}
             activeOpacity={0.8}
           >
-            <Text style={styles.logoutButtonText}>Logout</Text>
+            <Text style={styles.logoutButtonText}>🚪 Logout</Text>
           </TouchableOpacity>
         </View>
 
@@ -168,7 +232,7 @@ const ProfileScreen = () => {
 
             {/* Modal Buttons */}
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCancelButton}
                 onPress={() => setShowLogoutModal(false)}
                 activeOpacity={0.8}
@@ -176,7 +240,7 @@ const ProfileScreen = () => {
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalLogoutButton}
                 onPress={handleLogout}
                 activeOpacity={0.8}
@@ -228,10 +292,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     flex: 1,
     textAlign: 'center',
-    marginRight: 48,
   },
-  headerSpacer: {
-    width: 48,
+  editButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#00BFFF',
+    borderRadius: 8,
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 
   // Profile Header
@@ -253,12 +324,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+  },
   avatarText: {
     fontSize: 40,
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  editAvatarButton: {
+  editIconOverlay: {
     position: 'absolute',
     bottom: 0,
     right: 0,
@@ -266,12 +342,12 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: '#00FF7F',
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#121212',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  editIcon: {
+  editIconText: {
     fontSize: 14,
   },
   userInfo: {
@@ -294,11 +370,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 16,
+  },
+  editLinkText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#00BFFF',
   },
   infoCard: {
     flexDirection: 'row',
@@ -339,6 +425,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#E0E0E0',
     fontWeight: '500',
+  },
+  arrowIcon: {
+    fontSize: 24,
+    color: '#666666',
+    fontWeight: '300',
   },
 
   // Action Buttons

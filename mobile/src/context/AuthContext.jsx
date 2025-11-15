@@ -168,6 +168,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // NEW: Update user profile after editing
+  const updateUserProfile = async (updatedUser) => {
+    try {
+      // Update user in state
+      setUser(updatedUser);
+      // Update user in AsyncStorage
+      await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -178,6 +191,7 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         updateUser,
+        updateUserProfile, // NEW: Added this function
       }}
     >
       {children}
