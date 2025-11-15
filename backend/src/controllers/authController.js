@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import { generateToken } from '../utils/jwt.js';
 import { sendOtpEmail } from "../utils/email.js";
 import bcrypt from "bcryptjs";
+import { deleteOldImage } from '../config/multerConfig.js';
 
 export const register = async (req, res) => {
   try {
@@ -79,7 +80,8 @@ export const login = async (req, res) => {
         fullName: user.fullName,
         role: user.role,
         coinBalance: user.coinBalance,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        profileImage: user.profileImage
       }
     });
   } catch (error) {
@@ -92,6 +94,77 @@ export const getProfile = async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
     res.json({ success: true, user });
   } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    console.log('\n📝 ===== PROFILE UPDATE REQUEST =====');
+    console.log('User ID:', req.user._id);
+    console.log('Request body:', req.body);
+    console.log('File uploaded:', req.file ? req.file.filename : 'No file');
+    
+    const { fullName, phoneNumber, username } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      console.log('❌ User not found:', req.user._id);
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Check if username is being changed and if it's already taken
+    if (username && username !== user.username) {
+      const existingUser = await User.findOne({ username });
+      if (existingUser) {
+        console.log('❌ Username already taken:', username);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Username is already taken' 
+        });
+      }
+      user.username = username;
+    }
+
+    // Update text fields
+    if (fullName) user.fullName = fullName;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+
+    // Handle profile image upload
+    if (req.file) {
+      console.log('New profile image uploaded:', req.file.filename);
+      
+      // Delete old image if exists
+      if (user.profileImage) {
+        deleteOldImage(user.profileImage);
+      }
+      
+      // Save new image path
+      user.profileImage = `/uploads/profiles/${req.file.filename}`;
+    }
+
+    await user.save();
+
+    console.log('✅ Profile updated successfully for user:', user.username);
+    console.log('Updated fields:', {
+      fullName: user.fullName,
+      phoneNumber: user.phoneNumber,
+      username: user.username,
+      profileImage: user.profileImage
+    });
+    console.log('===== END PROFILE UPDATE =====\n');
+
+    // Return updated user data (excluding password)
+    const updatedUser = await User.findById(user._id).select('-password');
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('❌ Error updating profile:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

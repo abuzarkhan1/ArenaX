@@ -1,4 +1,5 @@
 import Notification from '../models/Notification.js';
+import UserNotification from '../models/UserNotification.js';
 import User from '../models/User.js';
 import { sendPushNotifications } from '../services/pushNotification.js';
 
@@ -13,7 +14,7 @@ export const createNotification = async (req, res) => {
       relatedTournament, 
       isScheduled, 
       scheduledFor,
-      link // NEW: Accept link from request
+      link
     } = req.body;
 
     const notification = await Notification.create({
@@ -23,7 +24,7 @@ export const createNotification = async (req, res) => {
       targetAudience,
       specificUsers,
       relatedTournament,
-      link: link || null, // NEW: Store link if provided
+      link: link || null,
       isScheduled,
       scheduledFor: isScheduled ? scheduledFor : null,
       status: isScheduled ? 'scheduled' : 'draft',
@@ -84,32 +85,42 @@ export const sendNotification = async (req, res) => {
     // Get users based on target audience
     let users = [];
     if (notification.targetAudience === 'all') {
-      users = await User.find({ pushToken: { $exists: true, $ne: null } }).select('pushToken');
+      users = await User.find().select('pushToken');
     } else if (notification.targetAudience === 'players') {
-      users = await User.find({ 
-        role: 'player', 
-        pushToken: { $exists: true, $ne: null } 
-      }).select('pushToken');
+      users = await User.find({ role: 'player' }).select('pushToken');
     } else if (notification.targetAudience === 'specific' && notification.specificUsers.length > 0) {
       users = await User.find({ 
-        _id: { $in: notification.specificUsers },
-        pushToken: { $exists: true, $ne: null }
+        _id: { $in: notification.specificUsers }
       }).select('pushToken');
     }
 
-    // Extract push tokens
-    const pushTokens = users.map(user => user.pushToken).filter(token => token);
+    // Create user notifications for all targeted users
+    const userNotifications = users.map(user => ({
+      user: user._id,
+      notification: notification._id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      link: notification.link,
+      relatedTournament: notification.relatedTournament,
+      isRead: false
+    }));
+
+    await UserNotification.insertMany(userNotifications);
+
+    // Extract push tokens for users who have them
+    const pushTokens = users
+      .map(user => user.pushToken)
+      .filter(token => token);
 
     // Send push notifications
     if (pushTokens.length > 0) {
-      // NEW: Include link in notification data if available
       const notificationData = {
         notificationId: notification._id.toString(),
         type: notification.type,
         relatedTournament: notification.relatedTournament?.toString()
       };
 
-      // Add link to data if it exists
       if (notification.link) {
         notificationData.link = notification.link;
       }
@@ -126,7 +137,7 @@ export const sendNotification = async (req, res) => {
     notification.sentAt = new Date();
     await notification.save();
 
-    // Also emit via socket for real-time updates in web admin
+    // Emit via socket for real-time updates
     if (req.io) {
       req.io.emit('notification', {
         id: notification._id,
@@ -134,15 +145,16 @@ export const sendNotification = async (req, res) => {
         message: notification.message,
         type: notification.type,
         targetAudience: notification.targetAudience,
-        link: notification.link, // NEW: Include link in socket emit
+        link: notification.link,
         sentAt: notification.sentAt
       });
     }
 
     res.json({
       success: true,
-      message: `Notification sent successfully to ${pushTokens.length} devices`,
+      message: `Notification sent successfully to ${users.length} users`,
       notification,
+      usersSent: users.length,
       devicesSent: pushTokens.length
     });
   } catch (error) {
@@ -152,29 +164,42 @@ export const sendNotification = async (req, res) => {
 
 export const sendBulkNotification = async (req, res) => {
   try {
-    const { title, message, type, link } = req.body; // NEW: Accept link
+    const { title, message, type, link } = req.body;
 
     const notification = await Notification.create({
       title,
       message,
       type: type || 'announcement',
       targetAudience: 'all',
-      link: link || null, // NEW: Store link if provided
+      link: link || null,
       status: 'sent',
       sentAt: new Date(),
       createdBy: req.user._id
     });
 
-    // Get all users with push tokens
-    const users = await User.find({ 
-      pushToken: { $exists: true, $ne: null } 
-    }).select('pushToken');
+    // Get all users
+    const users = await User.find().select('pushToken');
 
-    const pushTokens = users.map(user => user.pushToken).filter(token => token);
+    // Create user notifications for all users
+    const userNotifications = users.map(user => ({
+      user: user._id,
+      notification: notification._id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      link: notification.link,
+      isRead: false
+    }));
+
+    await UserNotification.insertMany(userNotifications);
+
+    // Extract push tokens
+    const pushTokens = users
+      .map(user => user.pushToken)
+      .filter(token => token);
 
     // Send push notifications
     if (pushTokens.length > 0) {
-      // NEW: Include link in notification data if available
       const notificationData = {
         notificationId: notification._id.toString(),
         type: notification.type
@@ -191,7 +216,7 @@ export const sendBulkNotification = async (req, res) => {
       });
     }
 
-    // Also emit via socket for real-time updates
+    // Emit via socket
     if (req.io) {
       req.io.emit('notification', {
         id: notification._id,
@@ -199,15 +224,16 @@ export const sendBulkNotification = async (req, res) => {
         message: notification.message,
         type: notification.type,
         targetAudience: notification.targetAudience,
-        link: notification.link, // NEW: Include link
+        link: notification.link,
         sentAt: notification.sentAt
       });
     }
 
     res.json({
       success: true,
-      message: `Notification sent to ${pushTokens.length} devices`,
+      message: `Notification sent to ${users.length} users`,
       notification,
+      usersSent: users.length,
       devicesSent: pushTokens.length
     });
   } catch (error) {
@@ -249,6 +275,99 @@ export const getNotificationStats = async (req, res) => {
         scheduledNotifications,
         draftNotifications
       }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// NEW: Get user notifications
+export const getUserNotifications = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const notifications = await UserNotification.find({ user: req.user._id })
+      .populate('relatedTournament', 'title')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await UserNotification.countDocuments({ user: req.user._id });
+    const unreadCount = await UserNotification.countDocuments({ 
+      user: req.user._id, 
+      isRead: false 
+    });
+
+    res.json({
+      success: true,
+      notifications,
+      unreadCount,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// NEW: Mark notification as read
+export const markNotificationAsRead = async (req, res) => {
+  try {
+    const notification = await UserNotification.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+
+    notification.isRead = true;
+    notification.readAt = new Date();
+    await notification.save();
+
+    res.json({
+      success: true,
+      message: 'Notification marked as read',
+      notification
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// NEW: Mark all notifications as read
+export const markAllNotificationsAsRead = async (req, res) => {
+  try {
+    await UserNotification.updateMany(
+      { user: req.user._id, isRead: false },
+      { isRead: true, readAt: new Date() }
+    );
+
+    res.json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// NEW: Get unread count
+export const getUnreadCount = async (req, res) => {
+  try {
+    const unreadCount = await UserNotification.countDocuments({
+      user: req.user._id,
+      isRead: false
+    });
+
+    res.json({
+      success: true,
+      unreadCount
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
