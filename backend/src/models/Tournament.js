@@ -31,7 +31,22 @@ const tournamentSchema = new mongoose.Schema({
   gameType: {
     type: String,
     required: true,
-    enum: ['Free Fire', 'PUBG Mobile', 'Call of Duty Mobile', 'Valorant', 'Other']
+    enum: ['Free Fire', 'PUBG Mobile', 'Call of Duty Mobile', 'Other']
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: ['Free Fire', 'PUBG']
+  },
+  subCategory: {
+    type: String,
+    enum: ['Bermuda', 'Clash Squad', null],
+    default: null
+  },
+  mode: {
+    type: String,
+    enum: ['1v1', '4v4', null],
+    default: null
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

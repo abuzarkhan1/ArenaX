@@ -20,6 +20,9 @@ const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
     title: '',
     description: '',
     gameType: '',
+    category: 'Free Fire' as 'Free Fire' | 'PUBG',
+    subCategory: null as 'Bermuda' | 'Clash Squad' | null,
+    mode: null as '1v1' | '4v4' | null,
     entryFee: 0,
     prizePool: 0,
     maxParticipants: 0,
@@ -44,6 +47,9 @@ const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
         title: tournament.title || '',
         description: tournament.description || '',
         gameType: tournament.gameType || '',
+        category: tournament.category || 'Free Fire',
+        subCategory: tournament.subCategory || null,
+        mode: tournament.mode || null,
         entryFee: tournament.entryFee || 0,
         prizePool: tournament.prizePool || 0,
         maxParticipants: tournament.maxParticipants || 0,
@@ -296,6 +302,85 @@ const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
                   <option value="Valorant">Valorant</option>
                 </select>
               </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-gray-400 text-sm font-medium mb-2">
+                  Category *
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 rounded-lg text-white focus:outline-none transition-all"
+                  style={{
+                    background: 'rgba(18, 18, 18, 0.8)',
+                    border: '1px solid rgba(0, 191, 255, 0.3)'
+                  }}
+                >
+                  <option value="Free Fire">Free Fire</option>
+                  <option value="PUBG">PUBG</option>
+                </select>
+              </div>
+
+              {/* SubCategory - Only for Free Fire */}
+              {formData.category === 'Free Fire' && (
+                <div>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Sub-Category
+                  </label>
+                  <select
+                    name="subCategory"
+                    value={formData.subCategory || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        subCategory: value === '' ? null : value as 'Bermuda' | 'Clash Squad'
+                      }));
+                    }}
+                    className="w-full px-4 py-3 rounded-lg text-white focus:outline-none transition-all"
+                    style={{
+                      background: 'rgba(18, 18, 18, 0.8)',
+                      border: '1px solid rgba(0, 191, 255, 0.3)'
+                    }}
+                  >
+                    <option value="">Select Sub-Category</option>
+                    <option value="Bermuda">Bermuda</option>
+                    <option value="Clash Squad">Clash Squad</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Mode - Only for Clash Squad */}
+              {formData.category === 'Free Fire' && formData.subCategory === 'Clash Squad' && (
+                <div>
+                  <label className="block text-gray-400 text-sm font-medium mb-2">
+                    Mode
+                  </label>
+                  <select
+                    name="mode"
+                    value={formData.mode || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        mode: value === '' ? null : value as '1v1' | '4v4'
+                      }));
+                    }}
+                    className="w-full px-4 py-3 rounded-lg text-white focus:outline-none transition-all"
+                    style={{
+                      background: 'rgba(18, 18, 18, 0.8)',
+                      border: '1px solid rgba(0, 191, 255, 0.3)'
+                    }}
+                  >
+                    <option value="">Select Mode</option>
+                    <option value="1v1">1v1</option>
+                    <option value="4v4">4v4</option>
+                  </select>
+                </div>
+              )}
 
               {/* Scheduled Date */}
               <div>

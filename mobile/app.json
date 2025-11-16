@@ -65,7 +65,7 @@
       "@react-native-firebase/app",
       "@react-native-firebase/messaging"
     ],
-    "apiUrl": "http://192.168.15.7:5000",
+    "apiUrl": "http://192.168.15.3:5000",
     "extra": {
       "eas": {
         "projectId": "b6892813-b66d-4aa5-a72f-f71f7de8aa86"

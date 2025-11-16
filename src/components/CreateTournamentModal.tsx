@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Video, ExternalLink } from 'lucide-react';
 import { Tournament, StreamingConfig } from '../types';
@@ -19,6 +19,9 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
     title: '',
     description: '',
     gameType: 'Free Fire',
+    category: 'Free Fire',
+    subCategory: null,
+    mode: null,
     entryFee: 0,
     prizePool: 0,
     maxParticipants: 0,
@@ -35,6 +38,27 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
     }
   });
 
+  // Reset subCategory and mode when category changes
+  useEffect(() => {
+    if (formData.category === 'PUBG') {
+      setFormData(prev => ({
+        ...prev,
+        subCategory: null,
+        mode: null
+      }));
+    }
+  }, [formData.category]);
+
+  // Reset mode when subCategory changes
+  useEffect(() => {
+    if (formData.subCategory !== 'Clash Squad') {
+      setFormData(prev => ({
+        ...prev,
+        mode: null
+      }));
+    }
+  }, [formData.subCategory]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -43,7 +67,7 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
       ...prev,
       [name]: name === 'entryFee' || name === 'prizePool' || name === 'maxParticipants'
         ? Number(value)
-        : value,
+        : value === '' ? null : value,
     }));
   };
 
@@ -71,6 +95,9 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
         title: '',
         description: '',
         gameType: 'Free Fire',
+        category: 'Free Fire',
+        subCategory: null,
+        mode: null,
         entryFee: 0,
         prizePool: 0,
         maxParticipants: 0,
@@ -179,6 +206,69 @@ const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
                     <option value="Other">Other</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Category Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="text-gray-400 text-sm font-medium mb-2 block">Category *</label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 rounded-lg text-white focus:outline-none transition-all"
+                    style={{
+                      background: 'rgba(18, 18, 18, 0.8)',
+                      border: '1px solid rgba(0, 191, 255, 0.3)',
+                    }}
+                  >
+                    <option value="Free Fire">Free Fire</option>
+                    <option value="PUBG">PUBG</option>
+                  </select>
+                </div>
+
+                {/* SubCategory Selection - Only for Free Fire */}
+                {formData.category === 'Free Fire' && (
+                  <div>
+                    <label className="text-gray-400 text-sm font-medium mb-2 block">Sub-Category</label>
+                    <select
+                      name="subCategory"
+                      value={formData.subCategory || ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-lg text-white focus:outline-none transition-all"
+                      style={{
+                        background: 'rgba(18, 18, 18, 0.8)',
+                        border: '1px solid rgba(0, 191, 255, 0.3)',
+                      }}
+                    >
+                      <option value="">Select Sub-Category</option>
+                      <option value="Bermuda">Bermuda</option>
+                      <option value="Clash Squad">Clash Squad</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Mode Selection - Only for Clash Squad */}
+                {formData.category === 'Free Fire' && formData.subCategory === 'Clash Squad' && (
+                  <div>
+                    <label className="text-gray-400 text-sm font-medium mb-2 block">Mode</label>
+                    <select
+                      name="mode"
+                      value={formData.mode || ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-lg text-white focus:outline-none transition-all"
+                      style={{
+                        background: 'rgba(18, 18, 18, 0.8)',
+                        border: '1px solid rgba(0, 191, 255, 0.3)',
+                      }}
+                    >
+                      <option value="">Select Mode</option>
+                      <option value="1v1">1v1</option>
+                      <option value="4v4">4v4</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>

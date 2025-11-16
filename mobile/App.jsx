@@ -1,4 +1,4 @@
-// App.tsx - With NotificationsScreen Added
+// App.tsx - Fixed with all screens registered
 
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
@@ -9,10 +9,13 @@ import LoginScreen from './src/screens/Auth/LoginScreen';
 import RegisterScreen from './src/screens/Auth/RegisterScreen';
 import ResetPasswordScreen from './src/screens/Auth/ResetPassword';
 import HomeScreen from './src/screens/Home/HomeScreen';
+import SubCategoryScreen from './src/screens/Home/SubCategoryScreen'; // Import SubCategory
+import TournamentListScreen from './src/screens/Home/TournamentListScreen'; // Import TournamentList
+import ClashSquadScreen from './src/screens/Home/ClashSquadScreen'; // Import ClashSquad
 import TournamentDetailScreen from './src/screens/Tournaments/TournamentDetailScreen';
 import ProfileScreen from './src/screens/Profile/ProfileScreen';
 import EditProfileScreen from './src/screens/Profile/EditProfileScreen';
-import NotificationsScreen from './src/screens/Notifications/NotificationsScreen'; // ✅ ADD THIS
+import NotificationsScreen from './src/screens/Notifications/NotificationsScreen';
 import WalletScreen from './src/screens/Wallet/WalletScreen';
 import ChatScreen from './src/screens/Chat/ChatScreen';
 import { View, Text, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
@@ -28,7 +31,7 @@ const Tab = createBottomTabNavigator();
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl ||
                process.env.EXPO_PUBLIC_API_URL || 
-               'http://192.168.15.7:5000' ||
+               'http://192.168.15.3:5000' ||
                'https://overcritically-telaesthetic-hayley.ngrok-free.dev'
                || 'http://10.0.2.2'
                ;
@@ -499,10 +502,13 @@ const AppNavigator = () => {
         ) : (
           <>
             <Stack.Screen name="Main" component={TabNavigator} />
+            {/* ✅ ADD ALL MISSING SCREENS HERE */}
+            <Stack.Screen name="SubCategory" component={SubCategoryScreen} />
+            <Stack.Screen name="TournamentList" component={TournamentListScreen} />
+            <Stack.Screen name="ClashSquad" component={ClashSquadScreen} />
             <Stack.Screen name="TournamentDetail" component={TournamentDetailScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-            {/* ✅ ADD THIS LINE - Register Notifications Screen */}
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
           </>
         )}

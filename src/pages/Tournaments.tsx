@@ -257,6 +257,21 @@ const Tournaments: React.FC = () => {
                     <div>
                       <p className="text-white font-bold">{tournament.title}</p>
                       <p className="text-gray-400 text-sm font-medium">{tournament.gameType}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-cyan-400 text-xs font-bold">{tournament.category}</span>
+                        {tournament.subCategory && (
+                          <>
+                            <span className="text-gray-500">›</span>
+                            <span className="text-purple-400 text-xs font-bold">{tournament.subCategory}</span>
+                          </>
+                        )}
+                        {tournament.mode && (
+                          <>
+                            <span className="text-gray-500">›</span>
+                            <span className="text-green-400 text-xs font-bold">{tournament.mode}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="py-4 px-6">

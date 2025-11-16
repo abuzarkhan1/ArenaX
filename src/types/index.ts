@@ -44,6 +44,9 @@ export interface Tournament {
   title: string;
   description: string;
   gameType: string;
+  category: 'Free Fire' | 'PUBG';
+  subCategory?: 'Bermuda' | 'Clash Squad' | null;
+  mode?: '1v1' | '4v4' | null;
   entryFee: number;
   prizePool: number;
   maxParticipants: number;

@@ -4,11 +4,14 @@ import Transaction from '../models/Transaction.js';
 
 export const getAllTournaments = async (req, res) => {
   try {
-    const { status, gameType, search, page = 1, limit = 20 } = req.query;
+    const { status, gameType, search, page = 1, limit = 20, category, subCategory, mode } = req.query;
 
     const query = {};
     if (status) query.status = status;
     if (gameType) query.gameType = gameType;
+    if (category) query.category = category;
+    if (subCategory) query.subCategory = subCategory;
+    if (mode) query.mode = mode;
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -188,6 +191,9 @@ export const createTournament = async (req, res) => {
       title,
       description,
       gameType,
+      category,
+      subCategory,
+      mode,
       entryFee,
       prizePool,
       maxParticipants,
@@ -222,6 +228,9 @@ export const createTournament = async (req, res) => {
       title,
       description,
       gameType,
+      category,
+      subCategory: subCategory || null,
+      mode: mode || null,
       createdBy: req.user._id,
       entryFee,
       prizePool,
@@ -370,6 +379,9 @@ export const updateTournament = async (req, res) => {
       title,
       description,
       gameType,
+      category,
+      subCategory,
+      mode,
       entryFee,
       prizePool,
       maxParticipants,
@@ -413,6 +425,9 @@ export const updateTournament = async (req, res) => {
     if (title) tournament.title = title;
     if (description) tournament.description = description;
     if (gameType) tournament.gameType = gameType;
+    if (category) tournament.category = category;
+    if (subCategory !== undefined) tournament.subCategory = subCategory;
+    if (mode !== undefined) tournament.mode = mode;
     if (entryFee !== undefined) tournament.entryFee = entryFee;
     if (prizePool !== undefined) tournament.prizePool = prizePool;
     if (maxParticipants !== undefined) tournament.maxParticipants = maxParticipants;
