@@ -160,7 +160,7 @@ export const sendEmail = async (to, subject, text, html = null) => {
 };
 
 export const sendOtpEmail = async (to, otp) => {
-  const subject = "🎮 ArenaX Support - Password Reset OTP";
+  const subject = "ArenaX Support - Password Reset OTP";
   const plainText = `Your OTP for password reset is: ${otp}\n\nThis OTP will expire in 5 minutes.\n\nIf you didn't request this, please ignore this email.`;
   const htmlContent = getOtpEmailTemplate(otp);
   

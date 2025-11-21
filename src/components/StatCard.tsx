@@ -77,8 +77,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, trend, co
               </div>
             )}
           </div>
-          
-          <motion.div 
+
+          <motion.div
             whileHover={{ rotate: 360 }}
             transition={{ duration: 0.6 }}
             className="w-16 h-16 rounded-xl flex items-center justify-center"

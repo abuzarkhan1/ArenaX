@@ -1,51 +1,73 @@
 import User from '../models/User.js';
+import logger from '../config/logger.js';
 import Tournament from '../models/Tournament.js';
 import Transaction from '../models/Transaction.js';
 import Settings from '../models/Settings.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments({ role: 'player' });
-    const activeUsers = await User.countDocuments({ role: 'player', accountStatus: 'active' });
+    // Get total users
+    const totalUsers = await User.countDocuments();
+    const activeUsers = await User.countDocuments({ accountStatus: 'active' });
+
+    // Get tournament stats
     const totalTournaments = await Tournament.countDocuments();
     const liveTournaments = await Tournament.countDocuments({ status: 'live' });
     const pendingTournaments = await Tournament.countDocuments({ status: 'pending' });
 
+    // Get coin stats
     const totalCoinsInCirculation = await User.aggregate([
-      { $match: { role: 'player' } },
       { $group: { _id: null, total: { $sum: '$coinBalance' } } }
     ]);
 
+    // Get total revenue (only completed/approved transactions)
     const totalCoinsDistributed = await Transaction.aggregate([
-      { $match: { transactionType: 'credit' } },
+      { 
+        $match: { 
+          transactionType: 'credit',
+          status: { $in: ['completed', 'approved'] }
+        } 
+      },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
 
-    const conversionRateSetting = await Settings.findOne({ settingKey: 'coin_conversion_rate' });
-    const conversionRate = conversionRateSetting ? conversionRateSetting.settingValue : 1;
+    // Get total transactions count
+    const totalTransactions = await Transaction.countDocuments();
 
-    const totalRevenuePKR = (totalCoinsDistributed[0]?.total || 0) * conversionRate;
+    // Get top coin holders
+    const topCoinHolders = await User.find()
+      .select('username email coinBalance userType')
+      .sort({ coinBalance: -1 })
+      .limit(5);
 
-    const last30Days = new Date();
-    last30Days.setDate(last30Days.getDate() - 30);
+    // Get recent transactions
+    const recentTransactions = await Transaction.find()
+      .populate('userId', 'username email')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    // User growth in last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const userGrowth = await User.aggregate([
-      { $match: { role: 'player', createdAt: { $gte: last30Days } } },
+      { $match: { createdAt: { $gte: thirtyDaysAgo } } },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           count: { $sum: 1 }
         }
       },
-      { $sort: { _id: 1 } }
+      { $sort: { _id: 1 } },
+      { $limit: 10 }
     ]);
 
+    // Coin purchases trend (last 30 days)
     const coinPurchasesTrend = await Transaction.aggregate([
       {
         $match: {
-          category: { $in: ['purchase', 'admin_adjustment'] },
-          transactionType: 'credit',
-          createdAt: { $gte: last30Days }
+          category: 'deposit',
+          createdAt: { $gte: thirtyDaysAgo }
         }
       },
       {
@@ -55,18 +77,12 @@ export const getDashboardStats = async (req, res) => {
           count: { $sum: 1 }
         }
       },
-      { $sort: { _id: 1 } }
+      { $sort: { _id: 1 } },
+      { $limit: 30 }
     ]);
 
-    const topCoinHolders = await User.find({ role: 'player' })
-      .select('username email coinBalance role')
-      .sort({ coinBalance: -1 })
-      .limit(5);
-
-    const recentTransactions = await Transaction.find()
-      .populate('userId', 'username')
-      .sort({ createdAt: -1 })
-      .limit(10);
+    // Calculate total revenue in PKR (assuming 1 coin = 1 PKR for deposits)
+    const totalRevenuePKR = totalCoinsDistributed[0]?.total || 0;
 
     res.json({
       success: true,
@@ -78,17 +94,19 @@ export const getDashboardStats = async (req, res) => {
           liveTournaments,
           pendingTournaments,
           totalCoinsInCirculation: totalCoinsInCirculation[0]?.total || 0,
-          totalRevenuePKR
+          totalRevenuePKR,
+          totalTransactions
         },
+        topCoinHolders,
+        recentTransactions,
         charts: {
           userGrowth,
           coinPurchasesTrend
-        },
-        topCoinHolders,
-        recentTransactions
+        }
       }
     });
   } catch (error) {
+    logger.error('Error fetching dashboard stats:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

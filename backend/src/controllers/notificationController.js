@@ -1,4 +1,5 @@
 import Notification from '../models/Notification.js';
+import logger from '../config/logger.js';
 import UserNotification from '../models/UserNotification.js';
 import User from '../models/User.js';
 import { sendPushNotifications } from '../services/pushNotification.js';

@@ -1,17 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { 
-  DollarSign, 
-  Search, 
-  Clock, 
-  User,
-  CreditCard,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Check,
-  X,
-  ChevronLeft,
-  ChevronRight
+  DollarSign, Search, Clock, User, CreditCard, CheckCircle2,
+  XCircle, AlertCircle, Check, X, ChevronLeft, ChevronRight,
+  TrendingUp, TrendingDown, Users, Eye
 } from 'lucide-react';
 import { withdrawalAPI } from '../services/api';
 
@@ -57,6 +48,7 @@ const Withdrawals: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
   const [showActionModal, setShowActionModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
   const [adminNote, setAdminNote] = useState('');
   const [transactionId, setTransactionId] = useState('');
@@ -71,7 +63,7 @@ const Withdrawals: React.FC = () => {
   const fetchWithdrawals = async () => {
     try {
       setLoading(true);
-      const params: any = { page: currentPage, limit: 2 };
+      const params: any = { page: currentPage, limit: 10 };
       if (statusFilter !== 'all') params.status = statusFilter;
       
       const response = await withdrawalAPI.getAll(params);
@@ -80,7 +72,6 @@ const Withdrawals: React.FC = () => {
       setPagination(response.data.pagination || { total: 0, page: 1, pages: 1 });
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
-      alert('Failed to fetch withdrawals');
     } finally {
       setLoading(false);
     }
@@ -111,8 +102,6 @@ const Withdrawals: React.FC = () => {
       setSelectedWithdrawal(null);
       
       fetchWithdrawals();
-      
-      alert(`Withdrawal ${actionType === 'approve' ? 'approved' : 'rejected'} successfully!`);
     } catch (error: any) {
       console.error('Error updating withdrawal:', error);
       alert(error.response?.data?.message || 'Failed to update withdrawal status');
@@ -129,6 +118,11 @@ const Withdrawals: React.FC = () => {
     setTransactionId('');
   };
 
+  const openDetailsModal = (withdrawal: Withdrawal) => {
+    setSelectedWithdrawal(withdrawal);
+    setShowDetailsModal(true);
+  };
+
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.pages) {
       setCurrentPage(newPage);
@@ -136,23 +130,18 @@ const Withdrawals: React.FC = () => {
     }
   };
 
-  const handleStatusFilterChange = (status: string) => {
-    setStatusFilter(status);
-    setCurrentPage(1);
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': 
-        return { bg: 'rgba(251, 191, 36, 0.1)', text: '#FCD34D', border: 'rgba(251, 191, 36, 0.3)' };
+        return { bg: 'rgba(245, 158, 11, 0.2)', text: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.4)' };
       case 'approved': 
-        return { bg: 'rgba(16, 185, 129, 0.1)', text: '#34D399', border: 'rgba(16, 185, 129, 0.3)' };
+        return { bg: 'rgba(16, 185, 129, 0.2)', text: '#10B981', border: '1px solid rgba(16, 185, 129, 0.4)' };
       case 'completed': 
-        return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981', border: 'rgba(16, 185, 129, 0.3)' };
+        return { bg: 'rgba(16, 185, 129, 0.2)', text: '#10B981', border: '1px solid rgba(16, 185, 129, 0.4)' };
       case 'rejected': 
-        return { bg: 'rgba(239, 68, 68, 0.1)', text: '#F87171', border: 'rgba(239, 68, 68, 0.3)' };
+        return { bg: 'rgba(239, 68, 68, 0.2)', text: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.4)' };
       default: 
-        return { bg: 'rgba(156, 163, 175, 0.1)', text: '#9CA3AF', border: 'rgba(156, 163, 175, 0.3)' };
+        return { bg: 'rgba(156, 163, 175, 0.2)', text: '#9CA3AF', border: '1px solid rgba(156, 163, 175, 0.4)' };
     }
   };
 
@@ -173,13 +162,6 @@ const Withdrawals: React.FC = () => {
     };
   };
 
-  const getProcessedByName = (withdrawal: Withdrawal) => {
-    if (withdrawal.processedBy && typeof withdrawal.processedBy === 'object') {
-      return withdrawal.processedBy.username || 'Unknown Admin';
-    }
-    return 'Unknown Admin';
-  };
-
   const filteredWithdrawals = withdrawals.filter(w => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -192,84 +174,36 @@ const Withdrawals: React.FC = () => {
     );
   });
 
-  const renderPaginationButtons = () => {
-    const buttons = [];
-    const maxButtons = 7;
-    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-    let endPage = Math.min(pagination.pages, startPage + maxButtons - 1);
-
-    if (endPage - startPage + 1 < maxButtons) {
-      startPage = Math.max(1, endPage - maxButtons + 1);
-    }
-
-    // First page button
-    if (startPage > 1) {
-      buttons.push(
-        <button
-          key={1}
-          onClick={() => handlePageChange(1)}
-          className="px-4 py-2 rounded-lg font-medium transition-all"
-          style={{
-            background: 'rgba(30, 30, 30, 0.95)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#888888'
-          }}
-        >
-          1
-        </button>
-      );
-      if (startPage > 2) {
-        buttons.push(
-          <span key="ellipsis1" className="px-2 text-gray-500">...</span>
-        );
-      }
-    }
-
-    // Page buttons
-    for (let i = startPage; i <= endPage; i++) {
-      buttons.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className="px-4 py-2 rounded-lg font-medium transition-all"
-          style={{
-            background: currentPage === i ? '#00BFFF' : 'rgba(30, 30, 30, 0.95)',
-            border: currentPage === i ? '1px solid #00BFFF' : '1px solid rgba(255, 255, 255, 0.1)',
-            color: currentPage === i ? 'white' : '#888888'
-          }}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    // Last page button
-    if (endPage < pagination.pages) {
-      if (endPage < pagination.pages - 1) {
-        buttons.push(
-          <span key="ellipsis2" className="px-2 text-gray-500">...</span>
-        );
-      }
-      buttons.push(
-        <button
-          key={pagination.pages}
-          onClick={() => handlePageChange(pagination.pages)}
-          className="px-4 py-2 rounded-lg font-medium transition-all"
-          style={{
-            background: 'rgba(30, 30, 30, 0.95)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#888888'
-          }}
-        >
-          {pagination.pages}
-        </button>
-      );
-    }
-
-    return buttons;
+  // Calculate stats
+  const stats = {
+    total: pagination.total,
+    pending: withdrawals.filter(w => w.status === 'pending').length,
+    completed: withdrawals.filter(w => w.status === 'completed').length,
+    rejected: withdrawals.filter(w => w.status === 'rejected').length,
+    totalAmount: withdrawals.reduce((sum, w) => sum + w.amount, 0)
   };
 
-  if (loading) {
+  const StatCard = ({ title, value, icon: Icon, color }: any) => (
+    <div
+      className="rounded-xl p-6"
+      style={{
+        background: 'rgba(30, 30, 30, 0.95)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-gray-400 font-medium text-sm">{title}</p>
+        <div className="p-3 rounded-lg" style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
+          <Icon size={24} style={{ color }} />
+        </div>
+      </div>
+      <p className="text-3xl font-bold text-white">{value}</p>
+    </div>
+  );
+
+  if (loading && !withdrawals.length) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#121212' }}>
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2" style={{ borderColor: '#00BFFF' }}></div>
@@ -282,7 +216,41 @@ const Withdrawals: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-white mb-2">Withdrawal Management</h1>
-        <p className="text-gray-400">Review and process player withdrawal requests • Total: {pagination.total} | Page {currentPage} of {pagination.pages}</p>
+        <p className="text-gray-400">Review and process player withdrawal requests</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <StatCard
+          title="Total Requests"
+          value={stats.total}
+          icon={Users}
+          color="#00BFFF"
+        />
+        <StatCard
+          title="Pending"
+          value={stats.pending}
+          icon={Clock}
+          color="#F59E0B"
+        />
+        <StatCard
+          title="Completed"
+          value={stats.completed}
+          icon={CheckCircle2}
+          color="#10B981"
+        />
+        <StatCard
+          title="Rejected"
+          value={stats.rejected}
+          icon={XCircle}
+          color="#EF4444"
+        />
+        <StatCard
+          title="Total Amount"
+          value={`${stats.totalAmount} AX`}
+          icon={DollarSign}
+          color="#8B5CF6"
+        />
       </div>
 
       {/* Search and Filters */}
@@ -308,7 +276,7 @@ const Withdrawals: React.FC = () => {
           {['all', 'pending', 'approved', 'completed', 'rejected'].map((status) => (
             <button
               key={status}
-              onClick={() => handleStatusFilterChange(status)}
+              onClick={() => { setStatusFilter(status); setCurrentPage(1); }}
               className="px-4 py-2 rounded-lg font-medium transition-all capitalize"
               style={{
                 background: statusFilter === status 
@@ -326,251 +294,255 @@ const Withdrawals: React.FC = () => {
         </div>
       </div>
 
-      {/* Withdrawals List */}
-      <div className="space-y-4">
-        {filteredWithdrawals.length === 0 ? (
-          <div 
-            className="text-center py-20 rounded-xl"
+      {/* Withdrawals Table */}
+      <div
+        className="rounded-xl overflow-hidden mb-8"
+        style={{
+          background: 'rgba(30, 30, 30, 0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+        }}
+      >
+        <div className="p-6">
+          <h3 className="text-2xl font-bold text-white mb-6">Withdrawal Requests</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <th className="text-left py-4 px-4 text-gray-400 font-medium text-sm">User</th>
+                  <th className="text-left py-4 px-4 text-gray-400 font-medium text-sm">Amount</th>
+                  <th className="text-left py-4 px-4 text-gray-400 font-medium text-sm">Payment Method</th>
+                  <th className="text-left py-4 px-4 text-gray-400 font-medium text-sm">Account</th>
+                  <th className="text-left py-4 px-4 text-gray-400 font-medium text-sm">Status</th>
+                  <th className="text-left py-4 px-4 text-gray-400 font-medium text-sm">Date</th>
+                  <th className="text-left py-4 px-4 text-gray-400 font-medium text-sm">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredWithdrawals.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center">
+                      <DollarSign size={48} className="mx-auto mb-4 text-gray-600" />
+                      <p className="text-gray-400 text-lg">No withdrawal requests found</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredWithdrawals.map((withdrawal) => {
+                    const statusStyle = getStatusColor(withdrawal.status);
+                    const userData = getUserData(withdrawal);
+
+                    return (
+                      <tr
+                        key={withdrawal._id}
+                        style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}
+                      >
+                        <td className="py-4 px-4">
+                          <div>
+                            <p className="text-white font-semibold">{userData.username}</p>
+                            <p className="text-gray-400 text-sm">{userData.email}</p>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <p className="text-white font-bold text-lg">{withdrawal.amount.toLocaleString()} AX</p>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center text-white">
+                            <CreditCard size={16} className="mr-2 text-gray-400" />
+                            {withdrawal.paymentMethod}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <p className="text-white font-mono text-sm">{withdrawal.accountNumber}</p>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span 
+                            className="px-3 py-1 rounded-lg text-xs font-semibold uppercase inline-flex items-center"
+                            style={statusStyle}
+                          >
+                            {withdrawal.status === 'pending' && <Clock size={12} className="mr-1" />}
+                            {withdrawal.status === 'completed' && <CheckCircle2 size={12} className="mr-1" />}
+                            {withdrawal.status === 'rejected' && <XCircle size={12} className="mr-1" />}
+                            {withdrawal.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <p className="text-gray-400 text-sm">{new Date(withdrawal.createdAt).toLocaleDateString()}</p>
+                          <p className="text-gray-500 text-xs">{new Date(withdrawal.createdAt).toLocaleTimeString()}</p>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => openDetailsModal(withdrawal)}
+                              className="p-2 rounded-lg transition-all hover:scale-105"
+                              style={{
+                                background: 'rgba(0, 191, 255, 0.2)',
+                                border: '1px solid rgba(0, 191, 255, 0.4)',
+                                color: '#00BFFF'
+                              }}
+                              title="View Details"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            
+                            {withdrawal.status === 'pending' && (
+                              <>
+                                <button
+                                  onClick={() => openActionModal(withdrawal, 'approve')}
+                                  className="p-2 rounded-lg transition-all hover:scale-105"
+                                  style={{
+                                    background: 'rgba(16, 185, 129, 0.2)',
+                                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                                    color: '#10B981'
+                                  }}
+                                  title="Approve"
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  onClick={() => openActionModal(withdrawal, 'reject')}
+                                  className="p-2 rounded-lg transition-all hover:scale-105"
+                                  style={{
+                                    background: 'rgba(239, 68, 68, 0.2)',
+                                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                                    color: '#EF4444'
+                                  }}
+                                  title="Reject"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      {pagination.pages > 1 && (
+        <div className="flex justify-center items-center gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="p-2 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             style={{
               background: 'rgba(30, 30, 30, 0.95)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#888888'
             }}
           >
-            <DollarSign size={64} className="mx-auto mb-4 text-gray-600" />
-            <p className="text-gray-400 text-lg">No withdrawal requests found</p>
-          </div>
-        ) : (
-          filteredWithdrawals.map((withdrawal) => {
-            const statusStyle = getStatusColor(withdrawal.status);
-            const isPending = withdrawal.status === 'pending';
-            const userData = getUserData(withdrawal);
+            <ChevronLeft size={20} />
+          </button>
 
-            return (
-              <div
-                key={withdrawal._id}
-                className="rounded-xl overflow-hidden"
-                style={{
-                  background: 'rgba(30, 30, 30, 0.95)',
-                  backdropFilter: 'blur(20px)',
-                  border: isPending 
-                    ? '2px solid rgba(251, 191, 36, 0.5)'
-                    : '1px solid rgba(255, 255, 255, 0.1)',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
-                }}
-              >
-                {isPending && (
-                  <div 
-                    className="h-1"
-                    style={{
-                      background: 'linear-gradient(90deg, #FCD34D 0%, #F59E0B 100%)',
-                    }}
-                  />
-                )}
+          <span className="text-gray-400 px-4">
+            Page {currentPage} of {pagination.pages}
+          </span>
 
-                <div className="p-6">
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Left Section - Main Info */}
-                    <div className="flex-1 space-y-4">
-                      <div className="flex items-start justify-between flex-wrap gap-4">
-                        <div>
-                          <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <User size={20} style={{ color: '#00BFFF' }} />
-                            <h3 className="text-xl font-bold text-white">{userData.username}</h3>
-                            <span 
-                              className="px-3 py-1 rounded-full text-xs font-bold uppercase"
-                              style={{
-                                background: statusStyle.bg,
-                                color: statusStyle.text,
-                                border: `1px solid ${statusStyle.border}`
-                              }}
-                            >
-                              {withdrawal.status === 'pending' && <Clock size={12} className="inline mr-1" />}
-                              {withdrawal.status === 'completed' && <CheckCircle2 size={12} className="inline mr-1" />}
-                              {withdrawal.status === 'approved' && <Check size={12} className="inline mr-1" />}
-                              {withdrawal.status === 'rejected' && <XCircle size={12} className="inline mr-1" />}
-                              {withdrawal.status}
-                            </span>
-                          </div>
-                          <p className="text-gray-400 text-sm">{userData.email}</p>
-                          <p className="text-gray-500 text-xs mt-1">
-                            Requested: {new Date(withdrawal.createdAt).toLocaleString()}
-                          </p>
-                        </div>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= pagination.pages}
+            className="p-2 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            style={{
+              background: 'rgba(30, 30, 30, 0.95)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#888888'
+            }}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
 
-                        <div className="text-right">
-                          <p className="text-sm text-gray-400 mb-1">Amount</p>
-                          <p className="text-3xl font-black" style={{ color: '#00BFFF' }}>{withdrawal.amount}</p>
-                          <p className="text-sm text-gray-500">AX Coins</p>
-                        </div>
-                      </div>
-
-                      {/* Details Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div 
-                          className="p-4 rounded-lg"
-                          style={{
-                            background: 'rgba(18, 18, 18, 0.8)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
-                          }}
-                        >
-                          <p className="text-xs text-gray-400 mb-1">Payment Method</p>
-                          <div className="flex items-center text-white font-semibold">
-                            <CreditCard size={16} className="mr-2" />
-                            {withdrawal.paymentMethod}
-                          </div>
-                        </div>
-
-                        <div 
-                          className="p-4 rounded-lg"
-                          style={{
-                            background: 'rgba(18, 18, 18, 0.8)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
-                          }}
-                        >
-                          <p className="text-xs text-gray-400 mb-1">Account Number</p>
-                          <p className="text-white font-semibold font-mono">{withdrawal.accountNumber}</p>
-                        </div>
-
-                        <div 
-                          className="p-4 rounded-lg"
-                          style={{
-                            background: 'rgba(18, 18, 18, 0.8)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
-                          }}
-                        >
-                          <p className="text-xs text-gray-400 mb-1">Current Balance</p>
-                          <p className="text-white font-semibold">{userData.coinBalance} AX Coins</p>
-                        </div>
-
-                        <div 
-                          className="p-4 rounded-lg"
-                          style={{
-                            background: 'rgba(18, 18, 18, 0.8)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
-                          }}
-                        >
-                          <p className="text-xs text-gray-400 mb-1">Phone Number</p>
-                          <p className="text-white font-semibold">{userData.phoneNumber}</p>
-                        </div>
-                      </div>
-
-                      {/* Transaction ID */}
-                      {withdrawal.transactionId && (
-                        <div 
-                          className="p-4 rounded-lg"
-                          style={{
-                            background: 'rgba(0, 191, 255, 0.1)',
-                            border: '1px solid rgba(0, 191, 255, 0.3)'
-                          }}
-                        >
-                          <p className="text-xs mb-1 font-semibold" style={{ color: '#00BFFF' }}>Transaction ID</p>
-                          <p className="text-white text-sm font-mono">{withdrawal.transactionId}</p>
-                        </div>
-                      )}
-
-                      {/* Admin Note */}
-                      {withdrawal.adminNote && (
-                        <div 
-                          className="p-4 rounded-lg"
-                          style={{
-                            background: 'rgba(138, 43, 226, 0.1)',
-                            border: '1px solid rgba(138, 43, 226, 0.3)'
-                          }}
-                        >
-                          <p className="text-xs mb-1 font-semibold" style={{ color: '#8A2BE2' }}>Admin Note</p>
-                          <p className="text-gray-300 text-sm">{withdrawal.adminNote}</p>
-                        </div>
-                      )}
-
-                      {/* Processed Info */}
-                      {withdrawal.processedBy && withdrawal.processedAt && (
-                        <div className="text-xs text-gray-500">
-                          Processed by: <span className="text-gray-400 font-semibold">{getProcessedByName(withdrawal)}</span>
-                          {' on '}{new Date(withdrawal.processedAt).toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Section - Actions */}
-                    {withdrawal.status === 'pending' && (
-                      <div className="lg:w-64 space-y-3">
-                        <button
-                          onClick={() => openActionModal(withdrawal, 'approve')}
-                          className="w-full px-6 py-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                          style={{
-                            background: 'rgba(16, 185, 129, 0.2)',
-                            border: '1px solid rgba(16, 185, 129, 0.5)',
-                            color: '#34D399'
-                          }}
-                        >
-                          <Check size={20} />
-                          Approve & Send Money
-                        </button>
-
-                        <button
-                          onClick={() => openActionModal(withdrawal, 'reject')}
-                          className="w-full px-6 py-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.2)',
-                            border: '1px solid rgba(239, 68, 68, 0.5)',
-                            color: '#F87171'
-                          }}
-                        >
-                          <X size={20} />
-                          Reject Request
-                        </button>
-                      </div>
-                    )}
-                  </div>
+      {/* Details Modal */}
+      {showDetailsModal && selectedWithdrawal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{
+            background: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)'
+          }}
+          onClick={() => setShowDetailsModal(false)}
+        >
+          <div
+            className="max-w-2xl w-full rounded-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'rgba(30, 30, 30, 0.98)',
+              border: '1px solid rgba(0, 191, 255, 0.5)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            <div className="h-1" style={{ background: 'linear-gradient(90deg, #00BFFF 0%, #8B5CF6 100%)' }} />
+            <div className="p-6 space-y-6">
+              <h3 className="text-2xl font-bold text-white">Withdrawal Details</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(18, 18, 18, 0.8)' }}>
+                  <p className="text-xs text-gray-400 mb-1">User</p>
+                  <p className="text-white font-semibold">{getUserData(selectedWithdrawal).username}</p>
+                  <p className="text-gray-400 text-sm">{getUserData(selectedWithdrawal).email}</p>
+                </div>
+                
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(18, 18, 18, 0.8)' }}>
+                  <p className="text-xs text-gray-400 mb-1">Amount</p>
+                  <p className="text-white font-bold text-xl">{selectedWithdrawal.amount} AX</p>
+                </div>
+                
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(18, 18, 18, 0.8)' }}>
+                  <p className="text-xs text-gray-400 mb-1">Payment Method</p>
+                  <p className="text-white font-semibold">{selectedWithdrawal.paymentMethod}</p>
+                </div>
+                
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(18, 18, 18, 0.8)' }}>
+                  <p className="text-xs text-gray-400 mb-1">Account Number</p>
+                  <p className="text-white font-mono">{selectedWithdrawal.accountNumber}</p>
+                </div>
+                
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(18, 18, 18, 0.8)' }}>
+                  <p className="text-xs text-gray-400 mb-1">Phone Number</p>
+                  <p className="text-white font-semibold">{getUserData(selectedWithdrawal).phoneNumber}</p>
+                </div>
+                
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(18, 18, 18, 0.8)' }}>
+                  <p className="text-xs text-gray-400 mb-1">Current Balance</p>
+                  <p className="text-white font-semibold">{getUserData(selectedWithdrawal).coinBalance} AX</p>
                 </div>
               </div>
-            );
-          })
-        )}
-      </div>
 
-      {/* Enhanced Pagination */}
-      {pagination.pages > 1 && (
-        <div className="mt-8 space-y-4">
-          {/* Pagination Info */}
-          <div className="text-center text-gray-400 text-sm">
-            Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, pagination.total)} of {pagination.total} withdrawals
-          </div>
+              {selectedWithdrawal.transactionId && (
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(0, 191, 255, 0.1)', border: '1px solid rgba(0, 191, 255, 0.3)' }}>
+                  <p className="text-xs mb-1 font-semibold" style={{ color: '#00BFFF' }}>Transaction ID</p>
+                  <p className="text-white font-mono">{selectedWithdrawal.transactionId}</p>
+                </div>
+              )}
 
-          {/* Pagination Controls */}
-          <div className="flex justify-center items-center gap-2 flex-wrap">
-            {/* Previous Button */}
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-              style={{
-                background: currentPage === 1 ? 'rgba(30, 30, 30, 0.95)' : '#00BFFF',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: currentPage === 1 ? '#888888' : 'white'
-              }}
-            >
-              <ChevronLeft size={16} />
-              Previous
-            </button>
+              {selectedWithdrawal.adminNote && (
+                <div className="p-4 rounded-lg" style={{ background: 'rgba(138, 43, 226, 0.1)', border: '1px solid rgba(138, 43, 226, 0.3)' }}>
+                  <p className="text-xs mb-1 font-semibold" style={{ color: '#8B5CF6' }}>Admin Note</p>
+                  <p className="text-gray-300">{selectedWithdrawal.adminNote}</p>
+                </div>
+              )}
 
-            {/* Page Numbers */}
-            {renderPaginationButtons()}
-
-            {/* Next Button */}
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === pagination.pages}
-              className="px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-              style={{
-                background: currentPage === pagination.pages ? 'rgba(30, 30, 30, 0.95)' : '#00BFFF',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: currentPage === pagination.pages ? '#888888' : 'white'
-              }}
-            >
-              Next
-              <ChevronRight size={16} />
-            </button>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="w-full px-6 py-3 rounded-lg font-semibold transition-all"
+                style={{
+                  background: 'rgba(0, 191, 255, 0.2)',
+                  border: '1px solid rgba(0, 191, 255, 0.5)',
+                  color: '#00BFFF'
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -632,7 +604,7 @@ const Withdrawals: React.FC = () => {
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
                   placeholder={actionType === 'approve' 
-                    ? 'Add any notes (optional - e.g., "Payment sent via Easypaisa")'
+                    ? 'Add any notes (optional)'
                     : 'Explain the reason for rejection (required)'
                   }
                   rows={4}
@@ -643,6 +615,26 @@ const Withdrawals: React.FC = () => {
                   }}
                 />
               </div>
+
+              {/* Transaction ID (for approve) */}
+              {actionType === 'approve' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
+                    Transaction ID (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    placeholder="Enter transaction ID if available"
+                    className="w-full p-4 rounded-lg text-white placeholder-gray-500 focus:outline-none"
+                    style={{
+                      background: 'rgba(18, 18, 18, 0.8)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3">
@@ -671,19 +663,7 @@ const Withdrawals: React.FC = () => {
                     color: actionType === 'approve' ? '#34D399' : '#F87171'
                   }}
                 >
-                  {processing ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div
-                        className="w-5 h-5 rounded-full border-2 border-transparent animate-spin"
-                        style={{
-                          borderTopColor: 'currentColor'
-                        }}
-                      />
-                      Processing...
-                    </span>
-                  ) : (
-                    `Confirm ${actionType === 'approve' ? 'Payment Sent' : 'Rejection'}`
-                  )}
+                  {processing ? 'Processing...' : `Confirm ${actionType === 'approve' ? 'Approval' : 'Rejection'}`}
                 </button>
               </div>
             </div>

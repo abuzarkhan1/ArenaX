@@ -3,6 +3,7 @@ import { generateToken } from '../utils/jwt.js';
 import { sendOtpEmail } from "../utils/email.js";
 import bcrypt from "bcryptjs";
 import { deleteOldImage } from '../config/multerConfig.js';
+import { createAdminNotification } from './adminNotificationController.js'
 
 export const register = async (req, res) => {
   try {
@@ -36,6 +37,36 @@ export const register = async (req, res) => {
         role: user.role,
         coinBalance: user.coinBalance,
         lastLogin: user.lastLogin
+      }
+    });
+    setImmediate(async () => {
+      try {
+        const notification = await createAdminNotification(
+          'user_registered',
+          'New User Registered',
+          `${user.username} (${user.email}) has registered`,
+          user._id,
+          null,
+          { email: user.email, role: user.role }
+        );
+
+        // Emit socket event for real-time notification
+        if (req.io) {
+          req.io.emit('admin_notification', {
+            id: notification._id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            relatedUser: {
+              _id: user._id,
+              username: user.username,
+              email: user.email
+            },
+            createdAt: notification.createdAt
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create admin notification:', error);
       }
     });
   } catch (error) {
@@ -104,11 +135,11 @@ export const updateProfile = async (req, res) => {
     console.log('User ID:', req.user._id);
     console.log('Request body:', req.body);
     console.log('File uploaded:', req.file ? req.file.filename : 'No file');
-    
+
     const { fullName, phoneNumber, username } = req.body;
-    
+
     const user = await User.findById(req.user._id);
-    
+
     if (!user) {
       console.log('❌ User not found:', req.user._id);
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -119,9 +150,9 @@ export const updateProfile = async (req, res) => {
       const existingUser = await User.findOne({ username });
       if (existingUser) {
         console.log('❌ Username already taken:', username);
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Username is already taken' 
+        return res.status(400).json({
+          success: false,
+          message: 'Username is already taken'
         });
       }
       user.username = username;
@@ -134,12 +165,12 @@ export const updateProfile = async (req, res) => {
     // Handle profile image upload
     if (req.file) {
       console.log('New profile image uploaded:', req.file.filename);
-      
+
       // Delete old image if exists
       if (user.profileImage) {
         deleteOldImage(user.profileImage);
       }
-      
+
       // Save new image path
       user.profileImage = `/uploads/profiles/${req.file.filename}`;
     }
@@ -178,23 +209,23 @@ export const updatePushToken = async (req, res) => {
     console.log('Push token received:', req.body.pushToken);
     console.log('Token length:', req.body.pushToken?.length);
     console.log('Token format valid:', req.body.pushToken?.startsWith('ExponentPushToken['));
-    
+
     const { pushToken } = req.body;
-    
+
     if (!pushToken) {
       console.log('❌ No push token in request body');
       return res.status(400).json({ success: false, message: 'Push token is required' });
     }
 
     const user = await User.findById(req.user._id);
-    
+
     if (!user) {
       console.log('❌ User not found:', req.user._id);
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     console.log('Before update - user.pushToken:', user.pushToken);
-    
+
     user.pushToken = pushToken;
     await user.save();
 
@@ -221,16 +252,16 @@ export const sendOtp = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
       });
     }
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "User not found" 
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
       });
     }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -241,15 +272,15 @@ export const sendOtp = async (req, res) => {
 
     await sendOtpEmail(email, otp);
 
-    res.status(200).json({ 
-      success: true, 
-      message: "OTP sent to your email" 
+    res.status(200).json({
+      success: true,
+      message: "OTP sent to your email"
     });
   } catch (error) {
     console.error("Error in sendOtp:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to send OTP. Please try again." 
+    res.status(500).json({
+      success: false,
+      message: "Failed to send OTP. Please try again."
     });
   }
 };
@@ -259,39 +290,39 @@ export const resetPasswordWithOtp = async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
     if (!email || !otp || !newPassword) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Email, OTP, and new password are required" 
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP, and new password are required"
       });
     }
 
     const otpData = otpStore[email];
     if (!otpData) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "OTP not found or expired" 
+      return res.status(400).json({
+        success: false,
+        message: "OTP not found or expired"
       });
     }
 
     if (otpData.expires < Date.now()) {
       delete otpStore[email];
-      return res.status(400).json({ 
-        success: false, 
-        message: "OTP expired. Please request a new one." 
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired. Please request a new one."
       });
     }
 
     if (otpData.otp !== otp) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid OTP" 
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP"
       });
     }
 
     if (newPassword.length < 6) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Password must be at least 6 characters long" 
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long"
       });
     }
 
@@ -301,15 +332,15 @@ export const resetPasswordWithOtp = async (req, res) => {
     await User.updateOne({ email }, { password: hashedPassword });
     delete otpStore[email];
 
-    res.status(200).json({ 
-      success: true, 
-      message: "Password reset successfully" 
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully"
     });
   } catch (error) {
     console.error("Error in resetPasswordWithOtp:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Failed to reset password. Please try again." 
+    res.status(500).json({
+      success: false,
+      message: "Failed to reset password. Please try again."
     });
   }
 };

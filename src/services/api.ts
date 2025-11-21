@@ -70,9 +70,17 @@ export const tournamentAPI = {
 };
 
 export const transactionAPI = {
-  getAll: (params?: any) => api.get('/transactions', { params }),
+  getAll: (params?: any) => api.get('/transactions/all', { params }),
   getStats: (period?: string) => api.get('/transactions/stats', { params: { period } }),
-  getWalletOverview: () => api.get('/transactions/wallet/overview'),
+  getWalletOverview: () => api.get('/transactions/wallet-overview'),
+  getUserTransactions: (params?: any) => api.get('/transactions/my-transactions', { params }),
+  exportTransactions: (params?: any) => {
+    return api.get('/transactions/export', { 
+      params, 
+      responseType: 'blob' 
+    });
+  },
+  getTrends: (days?: number) => api.get('/transactions/trends', { params: { days } }),
 };
 
 export const notificationAPI = {
@@ -86,9 +94,12 @@ export const notificationAPI = {
 
 export const settingsAPI = {
   getAll: (category?: string) => api.get('/settings', { params: { category } }),
+  getGrouped: () => api.get('/settings/grouped'),
   getByKey: (key: string) => api.get(`/settings/${key}`),
   update: (key: string, settingValue: any, description?: string) =>
     api.put(`/settings/${key}`, { settingValue, description }),
+  bulkUpdate: (settings: Array<{ settingKey: string; settingValue: any }>) =>
+    api.post('/settings/bulk', { settings }),
   create: (data: any) => api.post('/settings', data),
   delete: (key: string) => api.delete(`/settings/${key}`),
 };
@@ -113,6 +124,14 @@ export const withdrawalAPI = {
       adminNote: adminNote || '', 
       transactionId: transactionId || '' 
     }),
+};
+
+export const reportsAPI = {
+  getComprehensive: (period?: string) => api.get('/reports/comprehensive', { params: { period } }),
+  exportReport: (type: string, period?: string) => {
+    const params = new URLSearchParams({ type, period: period || 'month' });
+    return api.get(`/reports/export?${params.toString()}`, { responseType: 'blob' });
+  },
 };
 
 export default api;

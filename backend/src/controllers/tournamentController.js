@@ -1,6 +1,8 @@
 import Tournament from '../models/Tournament.js';
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
+import { createAdminNotification } from './adminNotificationController.js';
+
 
 export const getAllTournaments = async (req, res) => {
   try {
@@ -365,6 +367,40 @@ export const joinTournament = async (req, res) => {
       message: 'Successfully joined the tournament',
       tournament: updatedTournament,
       userBalance: user.coinBalance
+    });
+
+    setImmediate(async () => {
+      try {
+        const notification = await createAdminNotification(
+          'tournament_joined',
+          'User Joined Tournament',
+          `${user.username} joined "${tournament.title}"`,
+          user._id,
+          { id: tournament._id, model: 'Tournament' },
+          { entryFee: tournament.entryFee, tournamentTitle: tournament.title }
+        );
+
+        // Emit socket event for real-time notification
+        if (req.io) {
+          req.io.emit('admin_notification', {
+            id: notification._id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            relatedUser: {
+              _id: user._id,
+              username: user.username
+            },
+            relatedEntity: {
+              id: tournament._id,
+              title: tournament.title
+            },
+            createdAt: notification.createdAt
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create admin notification:', error);
+      }
     });
 
   } catch (error) {

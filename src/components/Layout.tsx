@@ -1,41 +1,42 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import Navbar from './Navbar';
 
 const Layout: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  return (
-    <div className="min-h-screen" style={{ background: '#121212' }}>
-      {/* Main Content */}
-      <div className="flex min-h-screen">
-        <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+    return (
+        <div className="min-h-screen" style={{ background: '#121212' }}>
+            <div className="flex min-h-screen">
+                {/* Sidebar */}
+                <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 lg:ml-0">
-          {/* Content Area */}
-          <div className="relative">
-            <Outlet />
-          </div>
-        </main>
-      </div>
+                {/* Navbar */}
+                <Navbar sidebarOpen={sidebarOpen} />
 
-      <style>{`
-        /* Smooth transitions */
-        * {
-          transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-          transition-duration: 150ms;
-        }
+                {/* Main Content */}
+                <main
+                    className="flex-1 transition-all duration-150"
+                    style={{
+                        marginLeft: sidebarOpen ? '320px' : '80px',
+                        marginTop: '88px',
+                        minHeight: 'calc(100vh - 88px)'
+                    }}
+                >
+                    <Outlet />
+                </main>
+            </div>
 
-        /* Prevent layout shift on mobile */
+            <style>{`
         @media (max-width: 1024px) {
           main {
             margin-left: 0 !important;
           }
         }
       `}</style>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default Layout;

@@ -2,18 +2,23 @@ import express from 'express';
 import {
   getAllTransactions,
   getTransactionStats,
+  getWalletOverview,
   getUserTransactions,
-  getWalletOverview
+  exportTransactions,
+  getTransactionTrends
 } from '../controllers/transactionController.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/user/me', protect, getUserTransactions);
-
-
-router.get('/', protect, adminOnly, getAllTransactions);
+// Admin routes
+router.get('/all', protect, adminOnly, getAllTransactions);
 router.get('/stats', protect, adminOnly, getTransactionStats);
-router.get('/wallet/overview', protect, adminOnly,getWalletOverview);
+router.get('/wallet-overview', protect, adminOnly, getWalletOverview);
+router.get('/export', protect, adminOnly, exportTransactions);
+router.get('/trends', protect, adminOnly, getTransactionTrends);
+
+// User routes
+router.get('/my-transactions', protect, getUserTransactions);
 
 export default router;

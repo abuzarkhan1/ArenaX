@@ -2,6 +2,7 @@ import Withdrawal from '../models/Withdrawal.js';
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
 import { sendEmail } from '../utils/email.js';
+import { createAdminNotification } from './adminNotificationController.js';
 
 export const createWithdrawalRequest = async (req, res) => {
   try {
@@ -153,6 +154,43 @@ export const createWithdrawalRequest = async (req, res) => {
         await sendEmail(user.email, emailSubject, emailText, emailHtml);
       } catch (emailError) {
         console.error('Failed to send confirmation email:', emailError);
+      }
+    });
+
+    // Create admin notification asynchronously
+    setImmediate(async () => {
+      try {
+        const notification = await createAdminNotification(
+          'withdrawal_created',
+          'New Withdrawal Request',
+          `${user.username} requested withdrawal of ${amount} AX coins via ${paymentMethod}`,
+          user._id,
+          { id: withdrawal._id, model: 'Withdrawal' },
+          { amount, paymentMethod, accountNumber }
+        );
+
+        // Emit socket event for real-time notification
+        if (req.io) {
+          req.io.emit('admin_notification', {
+            id: notification._id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            relatedUser: {
+              _id: user._id,
+              username: user.username,
+              email: user.email
+            },
+            relatedEntity: {
+              id: withdrawal._id,
+              amount: withdrawal.amount,
+              paymentMethod: withdrawal.paymentMethod
+            },
+            createdAt: notification.createdAt
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create admin notification:', error);
       }
     });
 

@@ -1,4 +1,5 @@
 import Message from '../models/Message.js';
+import logger from '../config/logger.js';
 import Tournament from '../models/Tournament.js';
 
 // Get all messages for a tournament
@@ -37,7 +38,7 @@ export const getTournamentMessages = async (req, res) => {
       messages
     });
   } catch (error) {
-    console.error('Get messages error:', error);
+    logger.error('Get messages error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -93,7 +94,7 @@ export const sendMessage = async (req, res) => {
       data: newMessage
     });
   } catch (error) {
-    console.error('Send message error:', error);
+    logger.error('Send message error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -137,7 +138,7 @@ export const updateMessage = async (req, res) => {
       data: message
     });
   } catch (error) {
-    console.error('Update message error:', error);
+    logger.error('Update message error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -172,7 +173,8 @@ export const deleteMessage = async (req, res) => {
       message: 'Message deleted successfully'
     });
   } catch (error) {
-    console.error('Delete message error:', error);
+    logger.error('Delete message error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

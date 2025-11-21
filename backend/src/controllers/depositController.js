@@ -2,6 +2,7 @@ import Deposit from '../models/Deposit.js';
 import User from '../models/User.js';
 import Transaction from '../models/Transaction.js';
 import { sendEmail } from '../utils/email.js';
+import { createAdminNotification } from './adminNotificationController.js';
 
 const ADMIN_EMAIL = 'abuzarkhan1242@gmail.com';
 
@@ -220,6 +221,43 @@ export const createDepositRequest = async (req, res) => {
     // 🔥 Send emails asynchronously in the background
     sendDepositEmails(deposit, user).catch(err => {
       console.error('Background email error:', err);
+    });
+
+    // Create admin notification asynchronously
+    setImmediate(async () => {
+      try {
+        const notification = await createAdminNotification(
+          'deposit_created',
+          'New Deposit Request',
+          `${user.username} requested deposit of ${amount} AX coins via ${paymentMethod}`,
+          user._id,
+          { id: deposit._id, model: 'Deposit' },
+          { amount, paymentMethod, accountNumber }
+        );
+
+        // Emit socket event for real-time notification
+        if (req.io) {
+          req.io.emit('admin_notification', {
+            id: notification._id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            relatedUser: {
+              _id: user._id,
+              username: user.username,
+              email: user.email
+            },
+            relatedEntity: {
+              id: deposit._id,
+              amount: deposit.amount,
+              paymentMethod: deposit.paymentMethod
+            },
+            createdAt: notification.createdAt
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create admin notification:', error);
+      }
     });
 
   } catch (error) {

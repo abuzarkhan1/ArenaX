@@ -18,7 +18,7 @@ const settingsSchema = new mongoose.Schema({
   },
   lastModifiedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin'
+    ref: 'User'
   }
 }, {
   timestamps: true

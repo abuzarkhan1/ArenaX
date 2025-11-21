@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import logger from '../config/logger.js';
 import Transaction from '../models/Transaction.js';
 import Tournament from '../models/Tournament.js';
 
