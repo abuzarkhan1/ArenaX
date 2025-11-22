@@ -31,22 +31,32 @@ const BackIcon = ({ size = 24, color = '#FFFFFF' }) => (
 const ModeToggle = React.memo(({ selectedMode, onModeChange }) => (
   <View style={styles.modeToggleContainer}>
     <TouchableOpacity
-      style={[styles.modeToggleButton, selectedMode === '1v1' && styles.modeToggleButtonActive]}
-      onPress={() => onModeChange('1v1')}
+      style={[styles.modeToggleButton, selectedMode === 'solo' && styles.modeToggleButtonActive]}
+      onPress={() => onModeChange('solo')}
       activeOpacity={0.7}
     >
-      <Text style={[styles.modeToggleText, selectedMode === '1v1' && styles.modeToggleTextActive]}>
-        1v1
+      <Text style={[styles.modeToggleText, selectedMode === 'solo' && styles.modeToggleTextActive]}>
+        Solo
       </Text>
     </TouchableOpacity>
     
     <TouchableOpacity
-      style={[styles.modeToggleButton, selectedMode === '4v4' && styles.modeToggleButtonActive]}
-      onPress={() => onModeChange('4v4')}
+      style={[styles.modeToggleButton, selectedMode === 'duo' && styles.modeToggleButtonActive]}
+      onPress={() => onModeChange('duo')}
       activeOpacity={0.7}
     >
-      <Text style={[styles.modeToggleText, selectedMode === '4v4' && styles.modeToggleTextActive]}>
-        4v4
+      <Text style={[styles.modeToggleText, selectedMode === 'duo' && styles.modeToggleTextActive]}>
+        Duo
+      </Text>
+    </TouchableOpacity>
+    
+    <TouchableOpacity
+      style={[styles.modeToggleButton, selectedMode === 'squad' && styles.modeToggleButtonActive]}
+      onPress={() => onModeChange('squad')}
+      activeOpacity={0.7}
+    >
+      <Text style={[styles.modeToggleText, selectedMode === 'squad' && styles.modeToggleTextActive]}>
+        Squad
       </Text>
     </TouchableOpacity>
   </View>
@@ -151,7 +161,7 @@ const TournamentCard = React.memo(({ tournament, onPress }) => {
 
 const ClashSquadScreen = ({ navigation, route }) => {
   const { category, subCategory } = route.params;
-  const [selectedMode, setSelectedMode] = useState('1v1');
+  const [selectedMode, setSelectedMode] = useState('solo');
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

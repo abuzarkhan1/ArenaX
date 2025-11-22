@@ -81,11 +81,11 @@ export const markAllAdminNotificationsAsRead = async (req, res) => {
 
 export const getAdminNotificationCount = async (req, res) => {
   try {
-    const unreadCount = await AdminNotification.countDocuments({ isRead: false });
+    const count = await AdminNotification.countDocuments({ isRead: false });
 
     res.json({
       success: true,
-      unreadCount
+      count
     });
   } catch (error) {
     logger.error('Error getting notification count:', error);
@@ -104,7 +104,7 @@ export const createAdminNotification = async (type, title, message, relatedUser,
       relatedEntity,
       metadata
     });
-    
+
     return notification;
   } catch (error) {
     logger.error('Error creating admin notification:', error);

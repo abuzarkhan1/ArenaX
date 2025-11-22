@@ -166,6 +166,46 @@ const TournamentListScreen = ({ navigation, route }) => {
         <View style={styles.headerPlaceholder} />
       </View>
 
+      {/* Mode Toggle */}
+      <View style={styles.modeToggleContainer}>
+        <TouchableOpacity
+          style={[styles.modeToggleButton, !mode && styles.modeToggleButtonActive]}
+          onPress={() => navigation.setParams({ mode: undefined })}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.modeToggleText, !mode && styles.modeToggleTextActive]}>
+            All
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeToggleButton, mode === 'solo' && styles.modeToggleButtonActive]}
+          onPress={() => navigation.setParams({ mode: 'solo' })}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.modeToggleText, mode === 'solo' && styles.modeToggleTextActive]}>
+            Solo
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeToggleButton, mode === 'duo' && styles.modeToggleButtonActive]}
+          onPress={() => navigation.setParams({ mode: 'duo' })}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.modeToggleText, mode === 'duo' && styles.modeToggleTextActive]}>
+            Duo
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeToggleButton, mode === 'squad' && styles.modeToggleButtonActive]}
+          onPress={() => navigation.setParams({ mode: 'squad' })}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.modeToggleText, mode === 'squad' && styles.modeToggleTextActive]}>
+            Squad
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Filters */}
       <View style={styles.filtersContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -265,6 +305,35 @@ const styles = StyleSheet.create({
   },
   headerPlaceholder: {
     width: 40,
+  },
+  
+  // Mode Toggle
+  modeToggleContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modeToggleButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#1E1E1E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeToggleButtonActive: {
+    backgroundColor: '#00BFFF',
+  },
+  modeToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#888888',
+  },
+  modeToggleTextActive: {
+    color: '#FFFFFF',
   },
   
   // Filters

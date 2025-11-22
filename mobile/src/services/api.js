@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
   // const API_BASE_URL = 'http://10.0.2.2:5000/api';
-  const API_BASE_URL = 'http://192.168.15.3:5000/api';
+  const API_BASE_URL = 'http://192.168.99.149:5000/api';
 // const API_BASE_URL = "https://overcritically-telaesthetic-hayley.ngrok-free.dev/api";
 // const API_BASE_URL = "https://terese-unconventional-luis.ngrok-free.dev/api";
 //  const API_BASE_URL = 'http://localhost:5000/api';
@@ -125,7 +125,7 @@ export const notificationAPI = {
 };
 
 //  export const SOCKET_URL = "http://10.0.2.2:5000";
-  export const SOCKET_URL = 'http://192.168.15.3:5000';
+  export const SOCKET_URL = 'http://192.168.99.149:5000';
 //export const SOCKET_URL = 'https://terese-unconventional-luis.ngrok-free.dev';
 // export const SOCKET_URL = "https://overcritically-telaesthetic-hayley.ngrok-free.dev";
 

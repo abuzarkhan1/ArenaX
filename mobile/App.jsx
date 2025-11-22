@@ -18,6 +18,7 @@ import EditProfileScreen from './src/screens/Profile/EditProfileScreen';
 import NotificationsScreen from './src/screens/Notifications/NotificationsScreen';
 import WalletScreen from './src/screens/Wallet/WalletScreen';
 import ChatScreen from './src/screens/Chat/ChatScreen';
+import TeamsScreen from './src/screens/Teams/TeamsScreen';
 import { View, Text, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
 import { useRef, useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,7 +32,7 @@ const Tab = createBottomTabNavigator();
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl ||
                process.env.EXPO_PUBLIC_API_URL || 
-               'http://192.168.15.3:5000' ||
+               'http://192.168.99.149:5000' ||
                'https://overcritically-telaesthetic-hayley.ngrok-free.dev'
                || 'http://10.0.2.2'
                ;
@@ -99,6 +100,29 @@ const TabNavigator = () => {
             >
               <Ionicons
                 name={focused ? 'home' : 'home-outline'}
+                size={26}
+                color={color}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Teams"
+        component={TeamsScreen}
+        options={{
+          tabBarLabel: 'Teams',
+          tabBarIcon: ({ color, focused }) => (
+            <View
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 50,
+                height: 40,
+              }}
+            >
+              <Ionicons
+                name={focused ? 'people' : 'people-outline'}
                 size={26}
                 color={color}
               />

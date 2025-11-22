@@ -19,7 +19,6 @@ const ProfileScreen = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Only refresh when user manually pulls to refresh
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -39,7 +38,6 @@ const ProfileScreen = () => {
   };
 
   const handleEditProfile = () => {
-    // Navigate to EditProfileScreen in the same folder structure
     navigation.navigate('EditProfile');
   };
 
@@ -64,24 +62,25 @@ const ProfileScreen = () => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <View style={styles.backIconContainer}>
+              <Text style={styles.backIcon}>‹</Text>
+            </View>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Profile</Text>
+          <Text style={styles.headerTitle}>Profile</Text>
           <TouchableOpacity
             style={styles.editButton}
             onPress={handleEditProfile}
           >
-            <Text style={styles.editButtonText}>✏️ Edit</Text>
+            <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
 
         {/* Profile Header Section */}
         <View style={styles.profileHeader}>
-          {/* Avatar - CLICKABLE to edit profile */}
           <TouchableOpacity 
             style={styles.avatarContainer}
             onPress={handleEditProfile}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
             {user?.profileImage ? (
               <Image
@@ -95,56 +94,56 @@ const ProfileScreen = () => {
                 </Text>
               </View>
             )}
-            {/* Edit Icon Overlay */}
-            <View style={styles.editIconOverlay}>
-              <Text style={styles.editIconText}>✏️</Text>
+            <View style={styles.cameraIconOverlay}>
+              <View style={styles.cameraIcon}>
+                <View style={styles.cameraLens} />
+              </View>
             </View>
           </TouchableOpacity>
 
-          {/* User Info */}
           <View style={styles.userInfo}>
             <Text style={styles.username}>
               {user?.username || 'User'}
             </Text>
-            <Text style={styles.email}>{user?.email || 'email@example.com'}</Text>
           </View>
         </View>
 
-        {/* Info List */}
-        <View style={styles.infoList}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Account Information</Text>
-            <TouchableOpacity onPress={handleEditProfile}>
-              <Text style={styles.editLinkText}>Edit Profile</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Info Cards */}
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
 
-          {/* Full Name - CLICKABLE */}
+          {/* Full Name */}
           <TouchableOpacity 
             style={styles.infoCard}
             onPress={handleEditProfile}
             activeOpacity={0.7}
           >
-            <View style={styles.infoLeft}>
-              <View style={styles.iconCircle}>
-                <Text style={styles.iconText}>👤</Text>
+            <View style={styles.infoContent}>
+              <View style={styles.iconWrapper}>
+                <View style={styles.iconInner}>
+                  <Text style={styles.iconSymbol}>U</Text>
+                </View>
               </View>
               <View style={styles.infoTextContainer}>
                 <Text style={styles.infoLabel}>Full Name</Text>
                 <Text style={styles.infoValue}>{user?.fullName || 'Not set'}</Text>
               </View>
             </View>
-            <Text style={styles.arrowIcon}>›</Text>
+            <View style={styles.chevronIcon}>
+              <Text style={styles.chevronText}>›</Text>
+            </View>
           </TouchableOpacity>
 
-          {/* Email - Non-clickable */}
+          {/* Email */}
           <View style={styles.infoCard}>
-            <View style={styles.infoLeft}>
-              <View style={styles.iconCircle}>
-                <Text style={styles.iconText}>✉️</Text>
+            <View style={styles.infoContent}>
+              <View style={styles.iconWrapper}>
+                <View style={styles.iconInner}>
+                  <Text style={styles.iconSymbol}>@</Text>
+                </View>
               </View>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Email</Text>
+                <Text style={styles.infoLabel}>Email Address</Text>
                 <Text style={styles.infoValue} numberOfLines={1}>
                   {user?.email || 'Not set'}
                 </Text>
@@ -152,35 +151,41 @@ const ProfileScreen = () => {
             </View>
           </View>
 
-          {/* Phone - CLICKABLE */}
+          {/* Phone */}
           <TouchableOpacity 
             style={styles.infoCard}
             onPress={handleEditProfile}
             activeOpacity={0.7}
           >
-            <View style={styles.infoLeft}>
-              <View style={styles.iconCircle}>
-                <Text style={styles.iconText}>📱</Text>
+            <View style={styles.infoContent}>
+              <View style={styles.iconWrapper}>
+                <View style={styles.iconInner}>
+                  <Text style={styles.iconSymbol}>☎</Text>
+                </View>
               </View>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Phone</Text>
+                <Text style={styles.infoLabel}>Phone Number</Text>
                 <Text style={styles.infoValue}>
                   {user?.phoneNumber || 'Not set'}
                 </Text>
               </View>
             </View>
-            <Text style={styles.arrowIcon}>›</Text>
+            <View style={styles.chevronIcon}>
+              <Text style={styles.chevronText}>›</Text>
+            </View>
           </TouchableOpacity>
 
-          {/* Gaming ID - CLICKABLE */}
+          {/* Gaming ID */}
           <TouchableOpacity 
             style={styles.infoCard}
             onPress={handleEditProfile}
             activeOpacity={0.7}
           >
-            <View style={styles.infoLeft}>
-              <View style={styles.iconCircle}>
-                <Text style={styles.iconText}>🎮</Text>
+            <View style={styles.infoContent}>
+              <View style={styles.iconWrapper}>
+                <View style={styles.iconInner}>
+                  <Text style={styles.iconSymbol}>G</Text>
+                </View>
               </View>
               <View style={styles.infoTextContainer}>
                 <Text style={styles.infoLabel}>Gaming ID</Text>
@@ -189,19 +194,20 @@ const ProfileScreen = () => {
                 </Text>
               </View>
             </View>
-            <Text style={styles.arrowIcon}>›</Text>
+            <View style={styles.chevronIcon}>
+              <Text style={styles.chevronText}>›</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          {/* Logout Button */}
+        {/* Action Section */}
+        <View style={styles.actionSection}>
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={() => setShowLogoutModal(true)}
             activeOpacity={0.8}
           >
-            <Text style={styles.logoutButtonText}>🚪 Logout</Text>
+            <Text style={styles.logoutButtonText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
 
@@ -217,20 +223,14 @@ const ProfileScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {/* Modal Icon */}
-            <View style={styles.modalIconContainer}>
-              <Text style={styles.modalIcon}>🚪</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Sign Out</Text>
             </View>
 
-            {/* Modal Title */}
-            <Text style={styles.modalTitle}>Logout</Text>
-
-            {/* Modal Message */}
             <Text style={styles.modalMessage}>
-              Are you sure you want to logout from your account?
+              Are you sure you want to sign out of your account?
             </Text>
 
-            {/* Modal Buttons */}
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.modalCancelButton}
@@ -241,11 +241,11 @@ const ProfileScreen = () => {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.modalLogoutButton}
+                style={styles.modalConfirmButton}
                 onPress={handleLogout}
                 activeOpacity={0.8}
               >
-                <Text style={styles.modalLogoutText}>Logout</Text>
+                <Text style={styles.modalConfirmText}>Sign Out</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -258,7 +258,7 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0A0A0A',
   },
   scrollView: {
     flex: 1,
@@ -272,258 +272,295 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#0A0A0A',
   },
   backButton: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1A1A1A',
     justifyContent: 'center',
     alignItems: 'center',
   },
   backIcon: {
-    fontSize: 24,
+    fontSize: 28,
     color: '#FFFFFF',
+    fontWeight: '300',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    flex: 1,
-    textAlign: 'center',
-  },
-  editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#00BFFF',
-    borderRadius: 8,
-  },
-  editButtonText: {
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: '600',
     color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  editButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#00BFFF',
+  },
+  editButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
 
   // Profile Header
   profileHeader: {
     alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-    marginBottom: 8,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    backgroundColor: '#0A0A0A',
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: '#00BFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#1A1A1A',
   },
   avatarImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#1A1A1A',
   },
   avatarText: {
-    fontSize: 40,
-    fontWeight: '700',
+    fontSize: 42,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
-  editIconOverlay: {
+  cameraIconOverlay: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: 2,
+    right: 2,
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#00FF7F',
-    borderWidth: 2,
-    borderColor: '#121212',
+    backgroundColor: '#00BFFF',
+    borderWidth: 3,
+    borderColor: '#0A0A0A',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  editIconText: {
-    fontSize: 14,
+  cameraIcon: {
+    width: 16,
+    height: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+    position: 'relative',
+  },
+  cameraLens: {
+    position: 'absolute',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#00BFFF',
+    top: 4,
+    left: 5,
   },
   userInfo: {
     alignItems: 'center',
   },
   username: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 6,
+    letterSpacing: 0.3,
   },
   email: {
-    fontSize: 14,
-    color: '#888888',
+    fontSize: 15,
+    color: '#707070',
     fontWeight: '400',
+    letterSpacing: 0.2,
   },
 
-  // Info List
-  infoList: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  // Info Section
+  infoSection: {
+    paddingHorizontal: 20,
+    marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  editLinkText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#00BFFF',
+    color: '#707070',
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1E1E1E',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#141414',
+    borderRadius: 16,
+    padding: 18,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#1F1F1F',
   },
-  infoLeft: {
+  infoContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
     flex: 1,
   },
-  iconCircle: {
+  iconWrapper: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0, 191, 255, 0.2)',
+    backgroundColor: '#1A1A1A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  iconInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 191, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconText: {
-    fontSize: 24,
+  iconSymbol: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#00BFFF',
   },
   infoTextContainer: {
     flex: 1,
   },
   infoLabel: {
-    fontSize: 14,
-    color: '#888888',
-    fontWeight: '400',
+    fontSize: 13,
+    color: '#707070',
+    fontWeight: '500',
     marginBottom: 4,
+    letterSpacing: 0.2,
   },
   infoValue: {
     fontSize: 16,
-    color: '#E0E0E0',
+    color: '#FFFFFF',
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
-  arrowIcon: {
-    fontSize: 24,
-    color: '#666666',
-    fontWeight: '300',
-  },
-
-  // Action Buttons
-  actionButtons: {
-    paddingHorizontal: 16,
-    marginTop: 24,
-  },
-  logoutButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    borderRadius: 12,
-    paddingVertical: 14,
+  chevronIcon: {
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
+    marginLeft: 8,
+  },
+  chevronText: {
+    fontSize: 22,
+    color: '#404040',
+    fontWeight: '400',
+  },
+
+  // Action Section
+  actionSection: {
+    paddingHorizontal: 20,
+    marginTop: 32,
+  },
+  logoutButton: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
   },
   logoutButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#EF4444',
+    letterSpacing: 0.3,
   },
 
-  // Logout Modal
+  // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
   },
   modalContent: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: '#141414',
     borderRadius: 24,
-    padding: 32,
+    padding: 28,
     width: '100%',
     maxWidth: 400,
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1F1F1F',
   },
-  modalIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  modalIcon: {
-    fontSize: 40,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  modalHeader: {
     marginBottom: 12,
   },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
   modalMessage: {
-    fontSize: 16,
-    color: '#888888',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
+    fontSize: 15,
+    color: '#707070',
+    lineHeight: 22,
+    marginBottom: 28,
+    letterSpacing: 0.2,
   },
   modalButtons: {
     flexDirection: 'row',
     gap: 12,
-    width: '100%',
   },
   modalCancelButton: {
     flex: 1,
-    backgroundColor: '#2A2A2A',
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
   },
   modalCancelText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#888888',
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
-  modalLogoutButton: {
+  modalConfirmButton: {
     flex: 1,
     backgroundColor: '#EF4444',
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
   },
-  modalLogoutText: {
+  modalConfirmText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
 
   bottomSpacing: {

@@ -21,6 +21,8 @@ import messageRoutes from './routes/messageRoutes.js';
 import withdrawalRoutes from './routes/withdrawalRoutes.js';
 import depositRoutes from './routes/depositRoutes.js';
 import reportsRoutes from './routes/reports.js';
+import bannerRoutes from './routes/bannerRoutes.js';
+import teamRoutes from './routes/teamRoutes.js';
 import { initializeDefaultSettings } from './seeders/settingsSeeder.js';
 import logger from './config/logger.js';
 
@@ -119,6 +121,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/deposits', depositRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/banners', bannerRoutes);
+app.use('/api/teams', teamRoutes);
 
 app.use(errorHandler);
 

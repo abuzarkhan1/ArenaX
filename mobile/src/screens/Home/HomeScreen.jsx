@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,21 @@ import {
   Dimensions,
   Linking,
   ImageBackground,
+  Image,
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { notificationAPI } from "../../services/api";
 import Svg, { Path } from "react-native-svg";
+import Constants from "expo-constants";
 
 const { width } = Dimensions.get("window");
+
+const API_URL =
+  Constants.expoConfig?.extra?.apiUrl ||
+  process.env.EXPO_PUBLIC_API_URL ||
+  "http://192.168.99.149:5000" ||
+  "https://overcritically-telaesthetic-hayley.ngrok-free.dev" ||
+  "http://10.0.2.2";
 
 // Bell Icon Component
 const BellIcon = ({ size = 24, color = "#FFFFFF" }) => (
@@ -40,41 +49,114 @@ const WhatsAppIcon = ({ size = 35, color = "#FFFFFF" }) => (
   </Svg>
 );
 
-// Category Card Component with Image
-const CategoryCard = React.memo(
-  ({ title, imageUri, onPress, comingSoon = false }) => {
-    return (
-      <TouchableOpacity
-        style={styles.categoryCard}
-        onPress={onPress}
-        activeOpacity={0.8}
-        disabled={comingSoon}
-      >
-        <ImageBackground
-          source={{ uri: imageUri }}
-          style={styles.categoryImage}
-          imageStyle={styles.categoryImageStyle}
-        >
-          <View style={styles.categoryOverlay}>
-            {comingSoon && (
-              <View style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>Coming Soon</Text>
-              </View>
-            )}
-            <View style={styles.categoryTitleContainer}>
-              <Text style={styles.categoryTitle}>{title}</Text>
-            </View>
-          </View>
-        </ImageBackground>
-      </TouchableOpacity>
-    );
+// Banner Slider Component
+const BannerSlider = ({ banners }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % banners.length;
+        scrollViewRef.current?.scrollTo({
+          x: nextIndex * width,
+          animated: true,
+        });
+        return nextIndex;
+      });
+    }, 3000); // Change banner every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  if (!banners || banners.length === 0) {
+    return null;
   }
-);
+
+  return (
+    <View style={styles.bannerContainer}>
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(event) => {
+          const newIndex = Math.round(
+            event.nativeEvent.contentOffset.x / width
+          );
+          setCurrentIndex(newIndex);
+        }}
+      >
+        {banners.map((banner, index) => (
+          <View key={banner._id || index} style={styles.bannerSlide}>
+            <Image
+              source={{ uri: `${API_URL}${banner.imageUrl}` }}
+              style={styles.bannerImage}
+              resizeMode="cover"
+            />
+          </View>
+        ))}
+      </ScrollView>
+      {banners.length > 1 && (
+        <View style={styles.paginationContainer}>
+          {banners.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.paginationDot,
+                index === currentIndex && styles.paginationDotActive,
+              ]}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
+
+// SubCategory Card Component with Image
+const SubCategoryCard = React.memo(({ title, imageUri, onPress }) => {
+  return (
+    <TouchableOpacity
+      style={styles.subCategoryCard}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <ImageBackground
+        source={{ uri: imageUri }}
+        style={styles.subCategoryImage}
+        imageStyle={styles.subCategoryImageStyle}
+      >
+        <View style={styles.subCategoryOverlay}>
+          <View style={styles.subCategoryContent}>
+            <Text style={styles.subCategoryTitle}>{title}</Text>
+          </View>
+        </View>
+      </ImageBackground>
+    </TouchableOpacity>
+  );
+});
 
 const HomeScreen = ({ navigation }) => {
   const { user, updateUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [banners, setBanners] = useState([]);
+
+  // Fetch banners
+  const fetchBanners = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/banners`);
+      const data = await response.json();
+      if (data.success) {
+        setBanners(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+    }
+  }, []);
 
   // Fetch unread notification count
   const fetchUnreadCount = useCallback(async () => {
@@ -90,7 +172,8 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     fetchUnreadCount();
-  }, [fetchUnreadCount]);
+    fetchBanners();
+  }, [fetchUnreadCount, fetchBanners]);
 
   // Poll for unread count every 30 seconds
   useEffect(() => {
@@ -103,9 +186,9 @@ const HomeScreen = ({ navigation }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([updateUser(), fetchUnreadCount()]);
+    await Promise.all([updateUser(), fetchUnreadCount(), fetchBanners()]);
     setRefreshing(false);
-  }, [updateUser, fetchUnreadCount]);
+  }, [updateUser, fetchUnreadCount, fetchBanners]);
 
   const handleNavigateToNotifications = useCallback(() => {
     navigation.navigate("Notifications");
@@ -138,14 +221,22 @@ const HomeScreen = ({ navigation }) => {
     }
   }, []);
 
-  const handleCategoryPress = useCallback(
-    (category) => {
-      if (category === "Free Fire") {
+  const handleSubCategoryPress = useCallback(
+    (subCategory) => {
+      if (subCategory === "Bermuda") {
         navigation
           .getParent()
-          ?.navigate("SubCategory", { category: "Free Fire" });
-      } else if (category === "PUBG") {
-        Alert.alert("Coming Soon", "PUBG tournaments will be available soon!");
+          ?.navigate("TournamentList", {
+            category: "Free Fire",
+            subCategory: "Bermuda",
+          });
+      } else if (subCategory === "Clash Squad") {
+        navigation
+          .getParent()
+          ?.navigate("ClashSquad", {
+            category: "Free Fire",
+            subCategory: "Clash Squad",
+          });
       }
     },
     [navigation]
@@ -198,22 +289,24 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Categories Section */}
-        <View style={styles.categoriesSection}>
-          <Text style={styles.sectionTitle}>Select Game</Text>
+        {/* Banner Slider */}
+        <BannerSlider banners={banners} />
 
-          <View style={styles.categoriesGrid}>
-            <CategoryCard
+        {/* SubCategories Section */}
+        <View style={styles.subCategoriesSection}>
+          <Text style={styles.sectionTitle}>Select Mode</Text>
+
+          <View style={styles.subCategoriesGrid}>
+            <SubCategoryCard
               title=""
-              imageUri="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzxd5f6owtc5TnHEQFm04eg1ZMeozaHey9NbeGFW4Ilga6diS49GVi64LkfY0lK8awlObi&s=10"
-              onPress={() => handleCategoryPress("Free Fire")}
+              imageUri="https://res.cloudinary.com/diwerulix/image/upload/v1763291740/br_soy6xq.jpg"
+              onPress={() => handleSubCategoryPress("Bermuda")}
             />
 
-            <CategoryCard
+            <SubCategoryCard
               title=""
-              imageUri="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoba1RPe-dSwqIDw4O5Wskz03p8vJNVn2LZA&s"
-              onPress={() => handleCategoryPress("PUBG")}
-              comingSoon={true}
+              imageUri="https://res.cloudinary.com/diwerulix/image/upload/v1763291834/xs2_rnfmjc.jpg"
+              onPress={() => handleSubCategoryPress("Clash Squad")}
             />
           </View>
         </View>
@@ -316,12 +409,42 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  // Categories Section
-  categoriesSection: {
+  // Banner Slider
+  bannerContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  bannerSlide: {
+    width: width,
     paddingHorizontal: 16,
-    marginTop: 40,
-    flex: 1,
+  },
+  bannerImage: {
+    width: width - 32,
+    height: 160,
+    borderRadius: 16,
+  },
+  paginationContainer: {
+    flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
+    gap: 8,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+  },
+  paginationDotActive: {
+    backgroundColor: "#00BFFF",
+    width: 24,
+  },
+
+  // SubCategories Section
+  subCategoriesSection: {
+    paddingHorizontal: 16,
+    marginTop: 10,
   },
   sectionTitle: {
     fontSize: 20,
@@ -329,14 +452,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 16,
   },
-  categoriesGrid: {
+  subCategoriesGrid: {
     flexDirection: "row",
     gap: 16,
     marginTop: 8,
   },
-  categoryCard: {
+  subCategoryCard: {
     flex: 1,
-    height: 240,
+    height: 260,
     borderRadius: 20,
     overflow: "hidden",
     elevation: 8,
@@ -348,51 +471,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 5,
   },
-  categoryImage: {
+  subCategoryImage: {
     flex: 1,
     width: "100%",
     height: "100%",
   },
-  categoryImageStyle: {
+  subCategoryImageStyle: {
     borderRadius: 20,
     resizeMode: "cover",
   },
-  categoryOverlay: {
+  subCategoryOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
     padding: 18,
   },
-  comingSoonBadge: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    backgroundColor: "rgba(255, 59, 48, 0.9)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  comingSoonText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
-  categoryTitleContainer: {
+  subCategoryContent: {
     paddingVertical: 16,
-    paddingHorizontal: 20,
-    alignSelf: "center",
+    paddingHorizontal: 12,
     width: "100%",
+    alignItems: "center",
   },
-  categoryTitle: {
-    fontSize: 24,
+  subCategoryTitle: {
+    fontSize: 26,
     fontWeight: "900",
     color: "#FFFFFF",
+    letterSpacing: 2.5,
     textAlign: "center",
-    letterSpacing: 1.8,
-    textShadowColor: "rgba(0, 0, 0, 0.95)",
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 8,
+    textTransform: "uppercase",
+    textShadowColor: "#000000",
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
   },
 
   // WhatsApp Floating Button

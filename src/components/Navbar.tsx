@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, LogOut, User, X } from 'lucide-react';
 import { io } from 'socket.io-client';
-import axios from 'axios';
+import { adminNotificationAPI } from '../services/api';
 
 interface Notification {
     _id?: string;
@@ -31,6 +31,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen }) => {
     const [showNotifications, setShowNotifications] = useState(false);
     const socketRef = useRef<any>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const notificationAudioRef = useRef<HTMLAudioElement>(null);
 
     useEffect(() => {
         const userStr = localStorage.getItem('user');
@@ -56,9 +57,21 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen }) => {
 
         socket.on('admin_notification', (notification: Notification) => {
             console.log('Received admin notification:', notification);
-            setNotifications(prev => [notification, ...prev]);
+
+            // Ensure notification is marked as unread
+            const newNotification = { ...notification, isRead: false };
+
+            setNotifications(prev => [newNotification, ...prev]);
             setUnreadCount(prev => prev + 1);
 
+            // Play notification sound
+            if (notificationAudioRef.current) {
+                notificationAudioRef.current.play().catch(error => {
+                    console.log('Could not play notification sound:', error);
+                });
+            }
+
+            // Show browser notification if permitted
             if (Notification.permission === 'granted') {
                 new Notification(notification.title, {
                     body: notification.message,
@@ -99,14 +112,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen }) => {
 
     const fetchNotifications = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin-notifications`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                    params: { limit: 10 }
-                }
-            );
+            const response = await adminNotificationAPI.getAll({ limit: 10 });
             if (response.data.success) {
                 setNotifications(response.data.notifications);
             }
@@ -117,11 +123,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen }) => {
 
     const fetchUnreadCount = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin-notifications/count`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const response = await adminNotificationAPI.getCount();
             if (response.data.success) {
                 setUnreadCount(response.data.count);
             }
@@ -132,12 +134,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen }) => {
 
     const markAsRead = async (notificationId: string) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.patch(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin-notifications/${notificationId}/read`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await adminNotificationAPI.markAsRead(notificationId);
 
             setNotifications(prev =>
                 prev.map(n => n._id === notificationId || n.id === notificationId ? { ...n, isRead: true } : n)
@@ -335,6 +332,9 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Hidden audio element for notification sound */}
+            <audio ref={notificationAudioRef} src="/notification.mp3" preload="auto" />
 
             <style>{`
         @keyframes slideDown {

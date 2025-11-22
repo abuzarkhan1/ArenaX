@@ -11,7 +11,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,8 +26,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminData');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -124,6 +124,26 @@ export const withdrawalAPI = {
       adminNote: adminNote || '', 
       transactionId: transactionId || '' 
     }),
+};
+
+export const adminNotificationAPI = {
+  getAll: (params?: any) => api.get('/admin-notifications', { params }),
+  getCount: () => api.get('/admin-notifications/count'),
+  markAsRead: (id: string) => api.patch(`/admin-notifications/${id}/read`),
+  markAllAsRead: () => api.patch('/admin-notifications/read-all'),
+};
+
+export const bannerAPI = {
+  getAll: (params?: any) => api.get('/banners', { params }),
+  getById: (id: string) => api.get(`/banners/${id}`),
+  create: (formData: FormData) => api.post('/banners', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  update: (id: string, formData: FormData) => api.put(`/banners/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  toggleStatus: (id: string) => api.patch(`/banners/${id}/toggle`),
+  delete: (id: string) => api.delete(`/banners/${id}`),
 };
 
 export const reportsAPI = {

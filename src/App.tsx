@@ -19,6 +19,7 @@ import Messages from "./pages/Messages";
 import Withdrawals from "./pages/Withdrawals";
 import Deposits from "./pages/Deposits";
 import ForgotPassword from "./components/ForgotPassword";
+import Banners from "./pages/Banners";
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
             <Route path="reports" element={<Reports />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="banners" element={<Banners />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

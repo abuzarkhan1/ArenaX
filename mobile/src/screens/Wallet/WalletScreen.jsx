@@ -38,7 +38,7 @@ const WalletScreen = () => {
 
       console.log(`Fetching transactions - Page ${pageNum}...`);
       const response = await api.get(
-        `/transactions/user/me?page=${pageNum}&limit=5`
+        `/transactions/my-transactions?page=${pageNum}&limit=5`
       );
       console.log("Transaction response:", response.data);
 
@@ -297,7 +297,7 @@ const WalletScreen = () => {
           <View style={styles.statCard}>
             <View style={styles.statHeader}>
               <Text style={styles.arrowUp}>↑</Text>
-              <Text style={styles.statLabel}>Total Earned</Text>
+              <Text style={styles.statLabel}>Total Received</Text>
             </View>
             <Text style={styles.statValue}>{user?.totalCoinsEarned || 0}</Text>
           </View>

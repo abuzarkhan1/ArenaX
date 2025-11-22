@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Bell,
   Settings,
+  Image,
   MessageSquare,
   ArrowDownCircle,
   ArrowUpCircle,
@@ -34,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { path: '/reports', icon: TrendingUp, label: 'Reports' },
     { path: '/notifications', icon: Bell, label: 'Notifications' },
     { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/banners', icon: Image, label: 'Banners' },
   ];
 
   return (

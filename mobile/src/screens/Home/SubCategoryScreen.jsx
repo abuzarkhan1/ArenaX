@@ -114,20 +114,6 @@ const SubCategoryScreen = ({ navigation, route }) => {
             onPress={() => handleSubCategoryPress('Clash Squad')}
           />
         </View>
-
-        <View style={styles.subCategoriesContainer}>
-          <SubCategoryCard
-            title=""
-            imageUri="https://res.cloudinary.com/diwerulix/image/upload/v1763291162/s1_unquom.jpg"
-            isComingSoon={true}
-          />
-          
-          <SubCategoryCard
-            title=""
-            imageUri="https://res.cloudinary.com/diwerulix/image/upload/v1763291432/s2_hvqpyi.jpg"
-            isComingSoon={true}
-          />
-        </View>
       </View>
     </SafeAreaView>
   );

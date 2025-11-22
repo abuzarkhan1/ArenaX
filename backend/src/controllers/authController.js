@@ -57,6 +57,7 @@ export const register = async (req, res) => {
             type: notification.type,
             title: notification.title,
             message: notification.message,
+            isRead: false,
             relatedUser: {
               _id: user._id,
               username: user.username,
